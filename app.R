@@ -11,39 +11,51 @@ library(shiny)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
+    titlePanel("Power Calculator"),
     sidebarLayout(
         sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+            sliderInput("baseline",
+                        "Baseline:",
+                        min = 0,
+                        max = 1,
+                        value = 0.5),
+            sliderInput("alpha",
+                        "Alpha:",
+                        min = 0, 
+                        max = 1,
+                        value = 0.05),
+            sliderInput("power",
+                        "Power:",
+                        min = 0, 
+                        max = 1,
+                        value = 0.8)
         ),
-
-        # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot")
+           plotOutput("plot")
         )
     )
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
+    output$plot <- renderPlot({
+        effect_sizes <- seq(0.01, 1, by = 0.01)
+        sample_sizes <- c()
+        for (e in effect_sizes) {
+            p2 <- input$baseline * (1 + e) 
+            if (p2 > 1) {
+                p2 <- 1
+            }
+            n <- power.prop.test(
+                n = NULL,
+                p1 = input$baseline,
+                p2 = p2,
+                sig.level = input$alpha,
+                power = input$power
+            )$n
+            sample_sizes <- append(sample_sizes, n)
+        }
+        plot(x = effect_sizes, y = sample_sizes, type = "o")
     })
 }
 
-# Run the application 
 shinyApp(ui = ui, server = server)
