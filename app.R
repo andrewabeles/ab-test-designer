@@ -1,17 +1,9 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
+library(ggplot2)
+library(plotly)
 
-# Define UI for application that draws a histogram
 ui <- fluidPage(
-    titlePanel("Power Calculator"),
+    titlePanel("Sample Size Estimator"),
     sidebarLayout(
         sidebarPanel(
             sliderInput("baseline",
@@ -31,13 +23,13 @@ ui <- fluidPage(
                         value = 0.8)
         ),
         mainPanel(
-           plotOutput("plot")
+           plotlyOutput("plot")
         )
     )
 )
 
 server <- function(input, output) {
-    output$plot <- renderPlot({
+    output$plot <- renderPlotly({
         effect_sizes <- seq(0.01, 1, by = 0.01)
         sample_sizes <- c()
         for (e in effect_sizes) {
@@ -54,7 +46,12 @@ server <- function(input, output) {
             )$n
             sample_sizes <- append(sample_sizes, n)
         }
-        plot(x = effect_sizes, y = sample_sizes, type = "o")
+        data <- data.frame(effect_sizes, sample_sizes)
+        ggplot(data, aes(x = effect_sizes, y = sample_sizes)) + 
+            geom_line(color="grey") + 
+            geom_point(color="coral") +
+            xlab("Effect Size") + 
+            ylab("Sample Size")
     })
 }
 
