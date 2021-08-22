@@ -29,7 +29,8 @@ ui <- navbarPage("Sample Size Estimator",
         ),
         tabPanel("About",
                  p("This is an app for estimating the sample size needed to run an experiment. 
-                   It takes 3 parameters as input: baseline, alpha, and power."),
+                   It takes 3 parameters as input: baseline, alpha, and power.
+                   It outputs the sample size per group required to detect a given effect size."),
                  h3("Baseline"),
                  p("The baseline value of the variable being tested. The variable's proportion or average in the control group."),
                  h3("Alpha"),
