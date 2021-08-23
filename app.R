@@ -54,10 +54,13 @@ ui <- navbarPage("Sample Size Estimator",
         ),
         tabPanel("About",
                  p("This is an app for estimating the sample size needed to run an experiment. 
-                   It takes 3 parameters as input: baseline, alpha, and power.
+                   It takes the following parameters as input: baseline, standard deviation (only for means), alpha, and power.
                    It outputs the sample size per group required to detect a given effect size."),
                  h3("Baseline"),
                  p("The baseline value of the variable being tested. The variable's proportion or average in the control group."),
+                 h3("Standard Deviation"),
+                 p("The standard deviation of the baseline variable. 
+                   Larger standard deviations require larger sample sizes to ensure the observed difference between groups is not due to the baseline variable's natural variance."),
                  h3("Alpha"),
                  p("Also known as the significance level, alpha is the experiment's Type I error (false positive) rate."),
                  h3("Power"),
@@ -82,7 +85,8 @@ server <- function(input, output) {
             sample_sizes <- append(sample_sizes, n)
         }
         data <- data.frame(effect_sizes, sample_sizes)
-        ggplot(data, aes(x = effect_sizes, y = sample_sizes)) + 
+        colnames(data) <- c("EffectSize", "SampleSize")
+        ggplot(data, aes(x = EffectSize, y = SampleSize)) + 
             geom_line(color = "grey") + 
             geom_point(color = "coral") +
             xlab("Effect Size") + 
@@ -104,7 +108,8 @@ server <- function(input, output) {
             sample_sizes <- append(sample_sizes, n)
         }
         data <- data.frame(effect_sizes, sample_sizes)
-        ggplot(data, aes(x = effect_sizes, y = sample_sizes)) +
+        colnames(data) <- c("EffectSize", "SampleSize")
+        ggplot(data, aes(x = EffectSize, y = SampleSize)) +
             geom_line(color = "grey") +
             geom_point(color = "coral") + 
             xlab("Effect Size") + 
