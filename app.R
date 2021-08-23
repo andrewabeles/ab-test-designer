@@ -75,6 +75,7 @@ server <- function(input, output) {
         sample_sizes <- c()
         for (e in effect_sizes) {
             p2 <- p1 * (1 + e)
+            if (p2 > 1) {p2 <- 1}
             n <- power.prop.test(
                 n = NULL,
                 p1 = p1,
