@@ -6,26 +6,51 @@ ui <- navbarPage("Sample Size Estimator",
         tabPanel("Proportions",
             sidebarLayout(
                 sidebarPanel(
-                    sliderInput("baseline",
+                    sliderInput("baseline_proportion",
                                 "Baseline",
                                 min = 0,
                                 max = 1,
                                 value = 0.5),
-                    sliderInput("alpha",
+                    sliderInput("alpha_proportion",
                                 "Alpha",
                                 min = 0, 
                                 max = 1,
                                 value = 0.05),
-                    sliderInput("power",
+                    sliderInput("power_proportion",
                                 "Power",
                                 min = 0, 
                                 max = 1,
                                 value = 0.8)
                 ),
                 mainPanel(
-                   plotlyOutput("plot")
+                   plotlyOutput("plot_proportions")
                 )
             )
+        ),
+        tabPanel("Means",
+                 sidebarLayout(
+                     sidebarPanel(
+                         numericInput("baseline_mean",
+                                     "Baseline",
+                                     value = 3.14),
+                         numericInput("sd",
+                                      "Standard Deviation",
+                                      value = 2.71),
+                         sliderInput("alpha_mean",
+                                     "Alpha",
+                                     min = 0, 
+                                     max = 1,
+                                     value = 0.05),
+                         sliderInput("power_mean",
+                                     "Power",
+                                     min = 0, 
+                                     max = 1,
+                                     value = 0.8)
+                     ),
+                     mainPanel(
+                         plotlyOutput("plot_means")
+                     )
+                 )
         ),
         tabPanel("About",
                  p("This is an app for estimating the sample size needed to run an experiment. 
@@ -41,27 +66,47 @@ ui <- navbarPage("Sample Size Estimator",
     )
 
 server <- function(input, output) {
-    output$plot <- renderPlotly({
+    output$plot_proportions <- renderPlotly({
+        p1 <- input$baseline_proportion
         effect_sizes <- seq(0.01, 1, by = 0.01)
         sample_sizes <- c()
         for (e in effect_sizes) {
-            p2 <- input$baseline * (1 + e) 
-            if (p2 > 1) {
-                p2 <- 1
-            }
+            p2 <- p1 * (1 + e)
             n <- power.prop.test(
                 n = NULL,
-                p1 = input$baseline,
+                p1 = p1,
                 p2 = p2,
-                sig.level = input$alpha,
-                power = input$power
+                sig.level = input$alpha_proportion,
+                power = input$power_proportion
             )$n
             sample_sizes <- append(sample_sizes, n)
         }
         data <- data.frame(effect_sizes, sample_sizes)
         ggplot(data, aes(x = effect_sizes, y = sample_sizes)) + 
-            geom_line(color="grey") + 
-            geom_point(color="coral") +
+            geom_line(color = "grey") + 
+            geom_point(color = "coral") +
+            xlab("Effect Size") + 
+            ylab("Sample Size")
+    })
+    output$plot_means <- renderPlotly({
+        x1 <- input$baseline_mean
+        effect_sizes <- seq(0.01, 1, by = 0.01)
+        sample_sizes <- c()
+        for (e in effect_sizes) {
+            x2 <- x1 * (1 + e)
+            n <- power.t.test(
+                n = NULL, 
+                delta = x2 - x1,
+                sd = input$sd,
+                sig.level = input$alpha_mean,
+                power = input$power_mean
+            )$n
+            sample_sizes <- append(sample_sizes, n)
+        }
+        data <- data.frame(effect_sizes, sample_sizes)
+        ggplot(data, aes(x = effect_sizes, y = sample_sizes)) +
+            geom_line(color = "grey") +
+            geom_point(color = "coral") + 
             xlab("Effect Size") + 
             ylab("Sample Size")
     })
