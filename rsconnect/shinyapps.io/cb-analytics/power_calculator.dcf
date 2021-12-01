@@ -1,0 +1,11 @@
+name: power_calculator
+title:
+username:
+account: cb-analytics
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5245625
+bundleId: 5316416
+url: https://cb-analytics.shinyapps.io/power_calculator/
+when: 1638394081.45522
+lastSyncTime: 1638394081.45524
