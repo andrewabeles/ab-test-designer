@@ -6,9 +6,14 @@ ui <- navbarPage("Sample Size Estimator",
         tabPanel("Proportions",
             sidebarLayout(
                 sidebarPanel(
-                    numericInput("users_per_week_prop",
+                    numericInput("users_per_week_proportion",
                                  "Users per Week",
                                  value = 100000),
+                    sliderInput("traffic_pct_proportion",
+                                "Percent of Traffic",
+                                min = 0,
+                                max = 1,
+                                value = 1),
                     sliderInput("baseline_proportion",
                                 "Baseline",
                                 min = 0,
@@ -35,7 +40,12 @@ ui <- navbarPage("Sample Size Estimator",
                 sidebarPanel(
                     numericInput("users_per_week_mean",
                                  "Users per Week",
-                                 value = 10000),
+                                 value = 100000),
+                    sliderInput("traffic_pct_mean",
+                                "Percent of Traffic",
+                                min = 0,
+                                max = 1,
+                                value = 1),
                     numericInput("baseline_mean",
                                  "Baseline",
                                  value = 3.14),
@@ -91,7 +101,8 @@ server <- function(input, output) {
             )$n * 2 # the function outputs required sample size per group, so we double to get the total required sample size 
             sample_sizes <- append(sample_sizes, n)
         }
-        weeks <- sample_sizes / input$users_per_week_prop 
+        users_per_week <- input$users_per_week_proportion * input$traffic_pct_proportion 
+        weeks <- sample_sizes / users_per_week
         data <- data.frame(effect_sizes, sample_sizes, weeks)
         colnames(data) <- c("EffectSize", "SampleSize", "Weeks")
         ggplot(data, aes(x = EffectSize, y = Weeks, text = paste("SampleSize:", SampleSize))) + 
@@ -115,7 +126,8 @@ server <- function(input, output) {
             )$n * 2 # the function outputs required sample size per group, so we double to get the total required sample size 
             sample_sizes <- append(sample_sizes, n)
         }
-        weeks <- sample_sizes / input$users_per_week_mean
+        users_per_week <- input$users_per_week_mean * input$traffic_pct_mean 
+        weeks <- sample_sizes / users_per_week
         data <- data.frame(effect_sizes, sample_sizes, weeks)
         colnames(data) <- c("EffectSize", "SampleSize", "Weeks")
         ggplot(data, aes(x = EffectSize, y = Weeks, text = paste("SampleSize:", SampleSize))) +
