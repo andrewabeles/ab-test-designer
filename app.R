@@ -6,6 +6,14 @@ ui <- navbarPage("Sample Size Estimator",
         tabPanel("Proportions",
             sidebarLayout(
                 sidebarPanel(
+                    numericInput("users_per_week_proportion",
+                                 "Users per Week",
+                                 value = 100000),
+                    sliderInput("traffic_pct_proportion",
+                                "Percent of Traffic",
+                                min = 0,
+                                max = 1,
+                                value = 1),
                     sliderInput("baseline_proportion",
                                 "Baseline",
                                 min = 0,
@@ -28,29 +36,37 @@ ui <- navbarPage("Sample Size Estimator",
             )
         ),
         tabPanel("Means",
-                 sidebarLayout(
-                     sidebarPanel(
-                         numericInput("baseline_mean",
-                                     "Baseline",
-                                     value = 3.14),
-                         numericInput("sd",
-                                      "Standard Deviation",
-                                      value = 2.71),
-                         sliderInput("alpha_mean",
-                                     "Alpha",
-                                     min = 0, 
-                                     max = 1,
-                                     value = 0.05),
-                         sliderInput("power_mean",
-                                     "Power",
-                                     min = 0, 
-                                     max = 1,
-                                     value = 0.8)
-                     ),
-                     mainPanel(
-                         plotlyOutput("plot_means")
-                     )
-                 )
+            sidebarLayout(
+                sidebarPanel(
+                    numericInput("users_per_week_mean",
+                                 "Users per Week",
+                                 value = 100000),
+                    sliderInput("traffic_pct_mean",
+                                "Percent of Traffic",
+                                min = 0,
+                                max = 1,
+                                value = 1),
+                    numericInput("baseline_mean",
+                                 "Baseline",
+                                 value = 3.14),
+                    numericInput("sd",
+                                 "Standard Deviation",
+                                 value = 2.71),
+                    sliderInput("alpha_mean",
+                                "Alpha",
+                                min = 0, 
+                                max = 1,
+                                value = 0.05),
+                    sliderInput("power_mean",
+                                "Power",
+                                min = 0, 
+                                max = 1,
+                                value = 0.8)
+                ),
+                mainPanel(
+                    plotlyOutput("plot_means")
+                )
+            )
         ),
         tabPanel("About",
                  p("This is an app for estimating the sample size needed to run an experiment. 
@@ -82,16 +98,18 @@ server <- function(input, output) {
                 p2 = p2,
                 sig.level = input$alpha_proportion,
                 power = input$power_proportion
-            )$n
+            )$n * 2 # the function outputs required sample size per group, so we double to get the total required sample size 
             sample_sizes <- append(sample_sizes, n)
         }
-        data <- data.frame(effect_sizes, sample_sizes)
-        colnames(data) <- c("EffectSize", "SampleSize")
-        ggplot(data, aes(x = EffectSize, y = SampleSize)) + 
+        users_per_week <- input$users_per_week_proportion * input$traffic_pct_proportion 
+        weeks <- sample_sizes / users_per_week
+        data <- data.frame(effect_sizes, sample_sizes, weeks)
+        colnames(data) <- c("EffectSize", "SampleSize", "Weeks")
+        ggplot(data, aes(x = EffectSize, y = Weeks, text = paste("SampleSize:", SampleSize))) + 
             geom_line(color = "grey") + 
             geom_point(color = "coral") +
             xlab("Effect Size") + 
-            ylab("Sample Size")
+            ylab("Weeks")
     })
     output$plot_means <- renderPlotly({
         x1 <- input$baseline_mean
@@ -105,16 +123,18 @@ server <- function(input, output) {
                 sd = input$sd,
                 sig.level = input$alpha_mean,
                 power = input$power_mean
-            )$n
+            )$n * 2 # the function outputs required sample size per group, so we double to get the total required sample size 
             sample_sizes <- append(sample_sizes, n)
         }
-        data <- data.frame(effect_sizes, sample_sizes)
-        colnames(data) <- c("EffectSize", "SampleSize")
-        ggplot(data, aes(x = EffectSize, y = SampleSize)) +
+        users_per_week <- input$users_per_week_mean * input$traffic_pct_mean 
+        weeks <- sample_sizes / users_per_week
+        data <- data.frame(effect_sizes, sample_sizes, weeks)
+        colnames(data) <- c("EffectSize", "SampleSize", "Weeks")
+        ggplot(data, aes(x = EffectSize, y = Weeks, text = paste("SampleSize:", SampleSize))) +
             geom_line(color = "grey") +
             geom_point(color = "coral") + 
             xlab("Effect Size") + 
-            ylab("Sample Size")
+            ylab("Weeks")
     })
 }
 
