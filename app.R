@@ -23,11 +23,10 @@ ui <- navbarPage("Sample Size Estimator",
                                 "Alpha",
                                 choices = c(0.01, 0.05, 0.1),
                                 selected = 0.05),
-                    sliderInput("power_proportion",
+                    selectInput("power_proportion",
                                 "Power",
-                                min = 0, 
-                                max = 1,
-                                value = 0.8)
+                                choices = c(0.8, 0.9, 0.99),
+                                selected = 0.8)
                 ),
                 mainPanel(
                     plotlyOutput("plot_proportions"),
@@ -61,11 +60,10 @@ ui <- navbarPage("Sample Size Estimator",
                                 "Alpha",
                                 choices = c(0.01, 0.05, 0.1),
                                 selected = 0.05),
-                    sliderInput("power_mean",
+                    selectInput("power_mean",
                                 "Power",
-                                min = 0, 
-                                max = 1,
-                                value = 0.8)
+                                choices = c(0.8, 0.9, 0.99),
+                                selected = 0.8)
                 ),
                 mainPanel(
                     plotlyOutput("plot_means"),
@@ -108,7 +106,7 @@ server <- function(input, output) {
                 p1 = p1,
                 p2 = p2,
                 sig.level = as.numeric(input$alpha_proportion),
-                power = input$power_proportion
+                power = as.numeric(input$power_proportion)
             )$n * 2 # the function outputs required sample size per group, so we double to get the total required sample size 
             sample_sizes <- append(sample_sizes, n)
         }
