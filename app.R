@@ -132,7 +132,7 @@ server <- function(input, output) {
                 delta = x2 - x1,
                 sd = input$sd,
                 sig.level = as.numeric(input$alpha_mean),
-                power = input$power_mean
+                power = as.numeric(input$power_mean)
             )$n * 2 # the function outputs required sample size per group, so we double to get the total required sample size 
             sample_sizes <- append(sample_sizes, n)
         }
