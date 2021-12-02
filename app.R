@@ -31,7 +31,13 @@ ui <- navbarPage("Sample Size Estimator",
                                 value = 0.8)
                 ),
                 mainPanel(
-                   plotlyOutput("plot_proportions")
+                    plotlyOutput("plot_proportions"),
+                    sliderInput("effect_size_range_proportion",
+                                "Effect Size Range",
+                                width = "100%",
+                                min = 0.01,
+                                max = 1,
+                                value = c(0.05, 0.25))
                 )
             )
         ),
@@ -64,7 +70,13 @@ ui <- navbarPage("Sample Size Estimator",
                                 value = 0.8)
                 ),
                 mainPanel(
-                    plotlyOutput("plot_means")
+                    plotlyOutput("plot_means"),
+                    sliderInput("effect_size_range_mean",
+                                "Effect Size Range",
+                                width = "100%",
+                                min = 0.01,
+                                max = 1,
+                                value = c(0.05, 0.25))
                 )
             )
         ),
@@ -87,7 +99,8 @@ ui <- navbarPage("Sample Size Estimator",
 server <- function(input, output) {
     output$plot_proportions <- renderPlotly({
         p1 <- input$baseline_proportion
-        effect_sizes <- seq(0.01, 1, by = 0.01)
+        effect_size_range <- input$effect_size_range_proportion
+        effect_sizes <- seq(effect_size_range[1], effect_size_range[2], by = 0.01)
         sample_sizes <- c()
         for (e in effect_sizes) {
             p2 <- p1 * (1 + e)
@@ -113,7 +126,8 @@ server <- function(input, output) {
     })
     output$plot_means <- renderPlotly({
         x1 <- input$baseline_mean
-        effect_sizes <- seq(0.01, 1, by = 0.01)
+        effect_size_range <- input$effect_size_range_mean
+        effect_sizes <- seq(effect_size_range[1], effect_size_range[2], by = 0.01)
         sample_sizes <- c()
         for (e in effect_sizes) {
             x2 <- x1 * (1 + e)
