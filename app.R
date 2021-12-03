@@ -180,11 +180,34 @@ make_history_row <- function (input_data, output_data) {
   
   effect_size <- paste("Effect Size=", output_data$EffectSize, sep="")
   weeks <- paste(output_data$Weeks, "wks", sep=" ")
-  df <- data.frame( matrix(input_data, nrow = 1), matrix(weeks, nrow=1))
+  inputs <- paste(input_data, " ", sep="")
+  df <- data.frame( matrix(inputs, nrow = 1), matrix(weeks, nrow=1))
   names(df) <- c("Metric Name", "Users Per Week", "Base Line", "SD", "Alpha", "Power", effect_size)
   
   return (df)
 } 
+
+render_history_table <- function (table_content) {
+  renderRHandsontable({
+    rhandsontable(table_content, width="100%", fixedColumnsLeft=6, useTypes = FALSE) %>%
+      hot_context_menu(
+        customOpts = list(
+          csv = list(name = "Download to CSV",
+                     callback = htmlwidgets::JS(
+                       "function (key, options) {
+                         var csv = csvString(this);
+
+                         var link = document.createElement('a');
+                         link.setAttribute('href', 'data:text/plain;charset=utf-8,' +
+                           encodeURIComponent(csv));
+                         link.setAttribute('download', 'sample_size.csv');
+
+                         document.body.appendChild(link);
+                         link.click();
+                         document.body.removeChild(link);
+                       }"))))
+    })
+}
 
 server <- function(input, output) {
     output$plot_proportions <- renderPlotly({
@@ -205,13 +228,13 @@ server <- function(input, output) {
     })
     
     values <- reactiveValues()
-    first_row <- TRUE
+    first_row <- 1
     
     history_proportion <- eventReactive(input$save_proportion, {
       output_data <- cal_proportion(input)
       input_data <- get_proportion_input (input)
-      if (first_row && input$save_proportion == 1){
-        first_row <- FALSE
+      if (first_row == 1 && input$save_proportion == 1){
+        first_row <<- 0
         values$df <- make_history_row(input_data, output_data)
       } else {
         df_new <- make_history_row(input_data, output_data)
@@ -223,8 +246,8 @@ server <- function(input, output) {
     history_mean <- eventReactive(input$save_mean, {
       output_data <- cal_mean(input)
       input_data <- get_mean_input (input)
-      if (first_row && input$save_mean == 1){
-        first_row <- FALSE
+      if (first_row == 1 && input$save_mean == 1){
+        first_row <<- 0
         values$df <- make_history_row(input_data, output_data)
       } else {
         df_new <- make_history_row(input_data, output_data)
@@ -234,13 +257,11 @@ server <- function(input, output) {
     })
     
     observeEvent(history_proportion(), {
-      output$history_table <- renderRHandsontable(
-        {rhandsontable(history_proportion(), width="100%", fixedColumnsLeft=6) })
+      output$history_table <- render_history_table(history_proportion())
     })
     
     observeEvent(history_mean(), {
-      output$history_table <- renderRHandsontable(
-        {rhandsontable(history_mean(), width="100%", fixedColumnsLeft=6) })
+      output$history_table <- render_history_table(history_mean())
     })
 }
 
