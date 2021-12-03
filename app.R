@@ -10,7 +10,7 @@ ui <- navbarPage("Sample Size Estimator",
                   textInput("metric_name_proportion", "Metric Name: "),
                     numericInput("users_per_week_proportion",
                                  "Users per Week",
-                                 value = 100000),
+                                 value = 10000),
                     sliderInput("traffic_pct_proportion",
                                 "Percent of Traffic",
                                 min = 0,
@@ -32,13 +32,6 @@ ui <- navbarPage("Sample Size Estimator",
                     actionButton("save_proportion","Save")
                 ),
                 mainPanel(
-#                  fluidRow(
-#                    column(width=5,
-#                           textInput("metric_name_proportion", "Metric Name: ", width="98%")),
-#                    column(width=3,   
-#                           actionButton("save_proportion","Save"))
-#                    
-#                  ),
                     plotlyOutput("plot_proportions", height=500),
                     sliderInput("effect_size_range_proportion",
                                 "Effect Size Range",
@@ -55,7 +48,7 @@ ui <- navbarPage("Sample Size Estimator",
                     textInput("metric_name_mean", "Metric Name: "),
                     numericInput("users_per_week_mean",
                                  "Users per Week",
-                                 value = 100000),
+                                 value = 10000),
                     sliderInput("traffic_pct_mean",
                                 "Percent of Traffic",
                                 min = 0,
@@ -78,7 +71,7 @@ ui <- navbarPage("Sample Size Estimator",
                     actionButton("save_mean","Save")
                 ),
                 mainPanel(
-                    plotlyOutput("plot_means"),
+                    plotlyOutput("plot_means", height=550),
                     sliderInput("effect_size_range_mean",
                                 "Effect Size Range",
                                 width = "100%",
@@ -178,9 +171,37 @@ make_history_row <- function (input_data, output_data) {
   # this function creates the table, 
   # insert data as first row into the table
   
-  effect_size <- paste("Effect Size=", output_data$EffectSize, sep="")
-  weeks <- paste(output_data$Weeks, "wks", sep=" ")
   inputs <- paste(input_data, " ", sep="")
+  display_effective_size <- seq(0.1, 0.5, by = 0.05)
+  max_display_index <- length(display_effective_size)
+  transformed_output <- as.data.frame(t(output_data))
+  effect_size <- c()
+  weeks <- c()
+  current_display_index <- 1
+  for (d in transformed_output) {
+    # effective_size = d[1], weeks = d[3]
+    while (current_display_index <= max_display_index && round(d[1], digits = 2) > round(display_effective_size[current_display_index], digits = 2)){
+        # make display effective size align with actual data
+        effect_size <- append(effect_size, paste("Effect Size=", display_effective_size[current_display_index], sep=""))
+        weeks <- append(weeks, "N/A")
+        current_display_index <- current_display_index + 1
+    }
+    if (current_display_index <= max_display_index && round(d[1], digits = 2) == round(display_effective_size[current_display_index], digits = 2)) {
+      effect_size <- append(effect_size, paste("Effect Size=", display_effective_size[current_display_index], sep=""))
+      weeks <- append(weeks, paste(d[3], "wks", sep=" "))  
+      current_display_index <- current_display_index + 1
+    } else if (current_display_index > max_display_index) {
+      break
+    } 
+  }
+  if (current_display_index <=  max_display_index) {
+    while (current_display_index <=  max_display_index) {
+      effect_size <- append(effect_size, paste("Effect Size=", display_effective_size[current_display_index], sep=""))
+      weeks <- append(weeks, "N/A")
+      current_display_index <- current_display_index + 1
+    }
+  }
+
   df <- data.frame( matrix(inputs, nrow = 1), matrix(weeks, nrow=1))
   names(df) <- c("Metric Name", "Users Per Week", "Base Line", "SD", "Alpha", "Power", effect_size)
   
