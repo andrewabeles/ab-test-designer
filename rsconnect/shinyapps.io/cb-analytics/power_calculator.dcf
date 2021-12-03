@@ -5,7 +5,7 @@ account: cb-analytics
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5245625
-bundleId: 5316979
+bundleId: 5321509
 url: https://cb-analytics.shinyapps.io/power_calculator/
-when: 1638406052.07007
-lastSyncTime: 1638406052.07008
+when: 1638489514.78582
+lastSyncTime: 1638489514.78584

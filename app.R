@@ -16,19 +16,17 @@ ui <- navbarPage("Sample Size Estimator",
                                 value = 1),
                     sliderInput("baseline_proportion",
                                 "Baseline",
-                                min = 0,
-                                max = 1,
+                                min = 0.01,
+                                max = 0.99,
                                 value = 0.5),
-                    sliderInput("alpha_proportion",
+                    selectInput("alpha_proportion",
                                 "Alpha",
-                                min = 0, 
-                                max = 1,
-                                value = 0.05),
-                    sliderInput("power_proportion",
+                                choices = c(0.01, 0.05, 0.1),
+                                selected = 0.05),
+                    selectInput("power_proportion",
                                 "Power",
-                                min = 0, 
-                                max = 1,
-                                value = 0.8)
+                                choices = c(0.8, 0.9, 0.99),
+                                selected = 0.8)
                 ),
                 mainPanel(
                     plotlyOutput("plot_proportions"),
@@ -58,16 +56,14 @@ ui <- navbarPage("Sample Size Estimator",
                     numericInput("sd",
                                  "Standard Deviation",
                                  value = 2.71),
-                    sliderInput("alpha_mean",
+                    selectInput("alpha_mean",
                                 "Alpha",
-                                min = 0, 
-                                max = 1,
-                                value = 0.05),
-                    sliderInput("power_mean",
+                                choices = c(0.01, 0.05, 0.1),
+                                selected = 0.05),
+                    selectInput("power_mean",
                                 "Power",
-                                min = 0, 
-                                max = 1,
-                                value = 0.8)
+                                choices = c(0.8, 0.9, 0.99),
+                                selected = 0.8)
                 ),
                 mainPanel(
                     plotlyOutput("plot_means"),
@@ -109,8 +105,8 @@ server <- function(input, output) {
                 n = NULL,
                 p1 = p1,
                 p2 = p2,
-                sig.level = input$alpha_proportion,
-                power = input$power_proportion
+                sig.level = as.numeric(input$alpha_proportion),
+                power = as.numeric(input$power_proportion)
             )$n * 2 # the function outputs required sample size per group, so we double to get the total required sample size 
             sample_sizes <- append(sample_sizes, n)
         }
@@ -135,8 +131,8 @@ server <- function(input, output) {
                 n = NULL, 
                 delta = x2 - x1,
                 sd = input$sd,
-                sig.level = input$alpha_mean,
-                power = input$power_mean
+                sig.level = as.numeric(input$alpha_mean),
+                power = as.numeric(input$power_mean)
             )$n * 2 # the function outputs required sample size per group, so we double to get the total required sample size 
             sample_sizes <- append(sample_sizes, n)
         }
