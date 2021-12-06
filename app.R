@@ -85,18 +85,26 @@ ui <- navbarPage("Sample Size Estimator",
           mainPanel(width=12, rHandsontableOutput('history_table'))
         ),
         tabPanel("About",
-                 p("This is an app for estimating the sample size needed to run an experiment. 
-                   It takes the following parameters as input: baseline, standard deviation (only for means), alpha, and power.
-                   It outputs the sample size per group required to detect a given % Lift."),
+                 p("This is an app for estimating the sample size and amount of time needed to run an experiment. 
+                   It takes the following parameters as input: users per week, percent of traffic, baseline, standard deviation (only for means), alpha, and power.
+                   It outputs the total sample size and number of weeks required to detect with statistical significance a given percent lift over the baseline. 
+                   If you find an experiment design that you like, you can give it a name and click 'Save' to record it in the History tab. You can then right click 
+                   the history table to export it as a CSV."),
+                 h3("Users per Week"),
+                 p("The number of users per week that will be included in the experiment."),
+                 h3("Percent of Traffic"),
+                 p("The percent of traffic that will be included in the experiment. This is used to calculate the actual number of users per week that will be included."),
                  h3("Baseline"),
                  p("The baseline value of the variable being tested. The variable's proportion or average in the control group."),
                  h3("Standard Deviation"),
                  p("The standard deviation of the baseline variable. 
                    Larger standard deviations require larger sample sizes to ensure the observed difference between groups is not due to the baseline variable's natural variance."),
+                 h3("Percent Lift"),
+                 p("The treatment's percentage lift over the baseline. The percentage difference between the treatment and control."),
                  h3("Alpha"),
                  p("Also known as the significance level, alpha is the experiment's Type I error (false positive) rate."),
                  h3("Power"),
-                 p("1 - Beta, the Type II error or false negative rate. Power represents the probability the experiment will detect a given % Lift at a given significance level.")
+                 p("1 - Beta, the Type II error or false negative rate. Power represents the probability the experiment will detect a given percent lift at a given significance level.")
         )
     )
 
