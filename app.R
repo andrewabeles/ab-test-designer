@@ -34,7 +34,7 @@ ui <- navbarPage("Sample Size Estimator",
                 mainPanel(
                     plotlyOutput("plot_proportions", height=500),
                     sliderInput("effect_size_range_proportion",
-                                "Effect Size Range",
+                                "% Lift Range",
                                 width = "100%",
                                 min = 0.01,
                                 max = 1,
@@ -73,7 +73,7 @@ ui <- navbarPage("Sample Size Estimator",
                 mainPanel(
                     plotlyOutput("plot_means", height=550),
                     sliderInput("effect_size_range_mean",
-                                "Effect Size Range",
+                                "% Lift Range",
                                 width = "100%",
                                 min = 0.01,
                                 max = 1,
@@ -87,7 +87,7 @@ ui <- navbarPage("Sample Size Estimator",
         tabPanel("About",
                  p("This is an app for estimating the sample size needed to run an experiment. 
                    It takes the following parameters as input: baseline, standard deviation (only for means), alpha, and power.
-                   It outputs the sample size per group required to detect a given effect size."),
+                   It outputs the sample size per group required to detect a given % Lift."),
                  h3("Baseline"),
                  p("The baseline value of the variable being tested. The variable's proportion or average in the control group."),
                  h3("Standard Deviation"),
@@ -96,7 +96,7 @@ ui <- navbarPage("Sample Size Estimator",
                  h3("Alpha"),
                  p("Also known as the significance level, alpha is the experiment's Type I error (false positive) rate."),
                  h3("Power"),
-                 p("1 - Beta, the Type II error or false negative rate. Power represents the probability the experiment will detect a given effect size at a given significance level.")
+                 p("1 - Beta, the Type II error or false negative rate. Power represents the probability the experiment will detect a given % Lift at a given significance level.")
         )
     )
 
@@ -120,7 +120,7 @@ cal_proportion <- function(input) {
   users_per_week <- input$users_per_week_proportion * input$traffic_pct_proportion 
   weeks <- signif(sample_sizes/users_per_week, 2)
   data <- data.frame(effect_sizes, sample_sizes, weeks)
-  colnames(data) <- c("EffectSize", "SampleSize", "Weeks")
+  colnames(data) <- c("PercentLift", "SampleSize", "Weeks")
   return (data)
 }
 
@@ -143,7 +143,7 @@ cal_mean <- function(input) {
   users_per_week <- input$users_per_week_mean * input$traffic_pct_mean 
   weeks <- signif(sample_sizes/users_per_week, 2)
   data <- data.frame(effect_sizes, sample_sizes, weeks)
-  colnames(data) <- c("EffectSize", "SampleSize", "Weeks")
+  colnames(data) <- c("PercentLift", "SampleSize", "Weeks")
   return (data)
 }
 
@@ -182,12 +182,12 @@ make_history_row <- function (input_data, output_data) {
     # effective_size = d[1], weeks = d[3]
     while (current_display_index <= max_display_index && round(d[1], digits = 2) > round(display_effective_size[current_display_index], digits = 2)){
         # make display effective size align with actual data
-        effect_size <- append(effect_size, paste("Effect Size=", display_effective_size[current_display_index], sep=""))
+        effect_size <- append(effect_size, paste("% Lift=", display_effective_size[current_display_index], sep=""))
         weeks <- append(weeks, "N/A")
         current_display_index <- current_display_index + 1
     }
     if (current_display_index <= max_display_index && round(d[1], digits = 2) == round(display_effective_size[current_display_index], digits = 2)) {
-      effect_size <- append(effect_size, paste("Effect Size=", display_effective_size[current_display_index], sep=""))
+      effect_size <- append(effect_size, paste("% Lift=", display_effective_size[current_display_index], sep=""))
       weeks <- append(weeks, paste(d[3], "wks", sep=" "))  
       current_display_index <- current_display_index + 1
     } else if (current_display_index > max_display_index) {
@@ -196,7 +196,7 @@ make_history_row <- function (input_data, output_data) {
   }
   if (current_display_index <=  max_display_index) {
     while (current_display_index <=  max_display_index) {
-      effect_size <- append(effect_size, paste("Effect Size=", display_effective_size[current_display_index], sep=""))
+      effect_size <- append(effect_size, paste("% Lift=", display_effective_size[current_display_index], sep=""))
       weeks <- append(weeks, "N/A")
       current_display_index <- current_display_index + 1
     }
@@ -233,18 +233,18 @@ render_history_table <- function (table_content) {
 server <- function(input, output) {
     output$plot_proportions <- renderPlotly({
       data <- cal_proportion(input)
-      ggplot(data, aes(x = EffectSize, y = Weeks, text = paste("SampleSize:", SampleSize))) + 
+      ggplot(data, aes(x = PercentLift, y = Weeks, text = paste("SampleSize:", SampleSize))) + 
         geom_line(color = "grey") + 
         geom_point(color = "coral") +
-        xlab("Effect Size") + 
+        xlab("% Lift") + 
         ylab("Weeks")
     })
     output$plot_means <- renderPlotly({
       data <- cal_mean (input)
-      ggplot(data, aes(x = EffectSize, y = Weeks, text = paste("SampleSize:", SampleSize))) +
+      ggplot(data, aes(x = PercentLift, y = Weeks, text = paste("SampleSize:", SampleSize))) +
         geom_line(color = "grey") +
         geom_point(color = "coral") + 
-        xlab("Effect Size") + 
+        xlab("% Lift") + 
         ylab("Weeks")
     })
     
