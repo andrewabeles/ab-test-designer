@@ -34,7 +34,7 @@ ui <- navbarPage("Sample Size Estimator",
                 mainPanel(
                     plotlyOutput("plot_proportions", height=500),
                     sliderInput("effect_size_range_proportion",
-                                "Effect Size Range",
+                                "Lift Range",
                                 width = "100%",
                                 min = 0.01,
                                 max = 1,
@@ -73,7 +73,7 @@ ui <- navbarPage("Sample Size Estimator",
                 mainPanel(
                     plotlyOutput("plot_means", height=550),
                     sliderInput("effect_size_range_mean",
-                                "Effect Size Range",
+                                "Lift Range",
                                 width = "100%",
                                 min = 0.01,
                                 max = 1,
@@ -85,18 +85,26 @@ ui <- navbarPage("Sample Size Estimator",
           mainPanel(width=12, rHandsontableOutput('history_table'))
         ),
         tabPanel("About",
-                 p("This is an app for estimating the sample size needed to run an experiment. 
-                   It takes the following parameters as input: baseline, standard deviation (only for means), alpha, and power.
-                   It outputs the sample size per group required to detect a given effect size."),
+                 p("This is an app for estimating the sample size and amount of time needed to run an experiment. 
+                   It takes the following parameters as input: users per week, percent of traffic, baseline, standard deviation (only for means), alpha, and power.
+                   It outputs the total sample size and number of weeks required to detect with statistical significance a given lift over the baseline. 
+                   If you find an experiment design that you like, you can give it a name and click 'Save' to record it in the History tab. You can then right click 
+                   the history table to export it as a CSV."),
+                 h3("Users per Week"),
+                 p("The number of users per week that will be included in the experiment."),
+                 h3("Percent of Traffic"),
+                 p("The percent of traffic that will be included in the experiment. This is used to calculate the actual number of users per week that will be included."),
                  h3("Baseline"),
                  p("The baseline value of the variable being tested. The variable's proportion or average in the control group."),
                  h3("Standard Deviation"),
                  p("The standard deviation of the baseline variable. 
                    Larger standard deviations require larger sample sizes to ensure the observed difference between groups is not due to the baseline variable's natural variance."),
+                 h3("Lift"),
+                 p("The treatment's lift over the baseline. The percentage difference between the treatment and control."),
                  h3("Alpha"),
                  p("Also known as the significance level, alpha is the experiment's Type I error (false positive) rate."),
                  h3("Power"),
-                 p("1 - Beta, the Type II error or false negative rate. Power represents the probability the experiment will detect a given effect size at a given significance level.")
+                 p("1 - Beta, the Type II error or false negative rate. Power represents the probability the experiment will detect a given percent lift at a given significance level.")
         )
     )
 
@@ -120,7 +128,7 @@ cal_proportion <- function(input) {
   users_per_week <- input$users_per_week_proportion * input$traffic_pct_proportion 
   weeks <- signif(sample_sizes/users_per_week, 2)
   data <- data.frame(effect_sizes, sample_sizes, weeks)
-  colnames(data) <- c("EffectSize", "SampleSize", "Weeks")
+  colnames(data) <- c("Lift", "SampleSize", "Weeks")
   return (data)
 }
 
@@ -143,13 +151,14 @@ cal_mean <- function(input) {
   users_per_week <- input$users_per_week_mean * input$traffic_pct_mean 
   weeks <- signif(sample_sizes/users_per_week, 2)
   data <- data.frame(effect_sizes, sample_sizes, weeks)
-  colnames(data) <- c("EffectSize", "SampleSize", "Weeks")
+  colnames(data) <- c("Lift", "SampleSize", "Weeks")
   return (data)
 }
 
 get_proportion_input <- function(input) {
   input_values <- c(input$metric_name_proportion
-                   ,input$users_per_week_proportion * input$traffic_pct_proportion
+                   ,input$users_per_week_proportion
+                   ,input$traffic_pct_proportion
                    ,input$baseline_proportion
                    ,"N/A"
                    ,input$alpha_proportion
@@ -159,7 +168,8 @@ get_proportion_input <- function(input) {
 
 get_mean_input <- function(input) {
   input_values <- c(input$metric_name_mean
-                    ,input$users_per_week_mean * input$traffic_pct_mean
+                    ,input$users_per_week_mean
+                    ,input$traffic_pct_mean
                     ,input$baseline_mean
                     ,input$sd
                     ,input$alpha_mean
@@ -172,7 +182,7 @@ make_history_row <- function (input_data, output_data) {
   # insert data as first row into the table
   
   inputs <- paste(input_data, " ", sep="")
-  display_effective_size <- seq(0.1, 0.5, by = 0.05)
+  display_effective_size <- seq(0.05, 1, by = 0.05)
   max_display_index <- length(display_effective_size)
   transformed_output <- as.data.frame(t(output_data))
   effect_size <- c()
@@ -182,13 +192,13 @@ make_history_row <- function (input_data, output_data) {
     # effective_size = d[1], weeks = d[3]
     while (current_display_index <= max_display_index && round(d[1], digits = 2) > round(display_effective_size[current_display_index], digits = 2)){
         # make display effective size align with actual data
-        effect_size <- append(effect_size, paste("Effect Size=", display_effective_size[current_display_index], sep=""))
+        effect_size <- append(effect_size, paste("Lift=", display_effective_size[current_display_index], sep=""))
         weeks <- append(weeks, "N/A")
         current_display_index <- current_display_index + 1
     }
     if (current_display_index <= max_display_index && round(d[1], digits = 2) == round(display_effective_size[current_display_index], digits = 2)) {
-      effect_size <- append(effect_size, paste("Effect Size=", display_effective_size[current_display_index], sep=""))
-      weeks <- append(weeks, paste(d[3], "wks", sep=" "))  
+      effect_size <- append(effect_size, paste("Lift=", display_effective_size[current_display_index], sep=""))
+      weeks <- append(weeks, d[3])  
       current_display_index <- current_display_index + 1
     } else if (current_display_index > max_display_index) {
       break
@@ -196,21 +206,21 @@ make_history_row <- function (input_data, output_data) {
   }
   if (current_display_index <=  max_display_index) {
     while (current_display_index <=  max_display_index) {
-      effect_size <- append(effect_size, paste("Effect Size=", display_effective_size[current_display_index], sep=""))
+      effect_size <- append(effect_size, paste("Lift=", display_effective_size[current_display_index], sep=""))
       weeks <- append(weeks, "N/A")
       current_display_index <- current_display_index + 1
     }
   }
 
   df <- data.frame( matrix(inputs, nrow = 1), matrix(weeks, nrow=1))
-  names(df) <- c("Metric Name", "Users Per Week", "Base Line", "SD", "Alpha", "Power", effect_size)
+  names(df) <- c("Metric Name", "Users per Week", "Percent of Traffic", "Baseline", "SD", "Alpha", "Power", effect_size)
   
   return (df)
 } 
 
 render_history_table <- function (table_content) {
   renderRHandsontable({
-    rhandsontable(table_content, width="100%", fixedColumnsLeft=6, useTypes = FALSE) %>%
+    rhandsontable(table_content, width="100%", fixedColumnsLeft=7, useTypes = FALSE) %>%
       hot_context_menu(
         customOpts = list(
           csv = list(name = "Download to CSV",
@@ -233,19 +243,21 @@ render_history_table <- function (table_content) {
 server <- function(input, output) {
     output$plot_proportions <- renderPlotly({
       data <- cal_proportion(input)
-      ggplot(data, aes(x = EffectSize, y = Weeks, text = paste("SampleSize:", SampleSize))) + 
+      ggplot(data, aes(x = Lift, y = Weeks, text = paste("SampleSize:", SampleSize))) + 
         geom_line(color = "grey") + 
         geom_point(color = "coral") +
-        xlab("Effect Size") + 
-        ylab("Weeks")
+        xlab("Lift") + 
+        ylab("Weeks") + 
+        scale_x_continuous(labels = scales::percent)
     })
     output$plot_means <- renderPlotly({
       data <- cal_mean (input)
-      ggplot(data, aes(x = EffectSize, y = Weeks, text = paste("SampleSize:", SampleSize))) +
+      ggplot(data, aes(x = Lift, y = Weeks, text = paste("SampleSize:", SampleSize))) +
         geom_line(color = "grey") +
         geom_point(color = "coral") + 
-        xlab("Effect Size") + 
-        ylab("Weeks")
+        xlab("Lift") + 
+        ylab("Weeks") + 
+        scale_x_continuous(labels = scales::percent)
     })
     
     values <- reactiveValues()
