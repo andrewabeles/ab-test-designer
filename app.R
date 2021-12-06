@@ -157,7 +157,8 @@ cal_mean <- function(input) {
 
 get_proportion_input <- function(input) {
   input_values <- c(input$metric_name_proportion
-                   ,input$users_per_week_proportion * input$traffic_pct_proportion
+                   ,input$users_per_week_proportion
+                   ,input$traffic_pct_proportion
                    ,input$baseline_proportion
                    ,"N/A"
                    ,input$alpha_proportion
@@ -167,7 +168,8 @@ get_proportion_input <- function(input) {
 
 get_mean_input <- function(input) {
   input_values <- c(input$metric_name_mean
-                    ,input$users_per_week_mean * input$traffic_pct_mean
+                    ,input$users_per_week_mean
+                    ,input$traffic_pct_mean
                     ,input$baseline_mean
                     ,input$sd
                     ,input$alpha_mean
@@ -180,7 +182,7 @@ make_history_row <- function (input_data, output_data) {
   # insert data as first row into the table
   
   inputs <- paste(input_data, " ", sep="")
-  display_effective_size <- seq(0.1, 0.5, by = 0.05)
+  display_effective_size <- seq(0.05, 1, by = 0.05)
   max_display_index <- length(display_effective_size)
   transformed_output <- as.data.frame(t(output_data))
   effect_size <- c()
@@ -196,7 +198,7 @@ make_history_row <- function (input_data, output_data) {
     }
     if (current_display_index <= max_display_index && round(d[1], digits = 2) == round(display_effective_size[current_display_index], digits = 2)) {
       effect_size <- append(effect_size, paste("Lift=", display_effective_size[current_display_index], sep=""))
-      weeks <- append(weeks, paste(d[3], "wks", sep=" "))  
+      weeks <- append(weeks, d[3])  
       current_display_index <- current_display_index + 1
     } else if (current_display_index > max_display_index) {
       break
@@ -211,14 +213,14 @@ make_history_row <- function (input_data, output_data) {
   }
 
   df <- data.frame( matrix(inputs, nrow = 1), matrix(weeks, nrow=1))
-  names(df) <- c("Metric Name", "Users Per Week", "Base Line", "SD", "Alpha", "Power", effect_size)
+  names(df) <- c("Metric Name", "Users per Week", "Percent of Traffic", "Baseline", "SD", "Alpha", "Power", effect_size)
   
   return (df)
 } 
 
 render_history_table <- function (table_content) {
   renderRHandsontable({
-    rhandsontable(table_content, width="100%", fixedColumnsLeft=6, useTypes = FALSE) %>%
+    rhandsontable(table_content, width="100%", fixedColumnsLeft=7, useTypes = FALSE) %>%
       hot_context_menu(
         customOpts = list(
           csv = list(name = "Download to CSV",
