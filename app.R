@@ -3,7 +3,7 @@ library(ggplot2)
 library(plotly)
 library(rhandsontable)
 
-ui <- navbarPage("Sample Size Estimator",
+ui <- navbarPage("A/B Test Designer",
         tabPanel("Proportions",
             sidebarLayout(
                 sidebarPanel(
@@ -85,7 +85,7 @@ ui <- navbarPage("Sample Size Estimator",
           mainPanel(width=12, rHandsontableOutput('history_table'))
         ),
         tabPanel("About",
-                 p("This is an app for estimating the sample size and amount of time needed to run an experiment. 
+                 p("This is an app for estimating the sample size and amount of time needed to run an A/B test. 
                    It takes the following parameters as input: users per week, percent of traffic, baseline, standard deviation (only for means), alpha, and power.
                    It outputs the total sample size and number of weeks required to detect with statistical significance a given lift over the baseline. 
                    If you find an experiment design that you like, you can give it a name and click 'Save' to record it in the History tab. You can then right click 
