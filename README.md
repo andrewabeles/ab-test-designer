@@ -1,7 +1,7 @@
-# Sample Size Estimator  
+# A/B Test Designer  
 https://andrewabeles.shinyapps.io/power_calculator/
 
-This is an app for estimating the sample size and amount of time needed to run an experiment. It takes the following parameters as input: users per week, percent of traffic, baseline, standard deviation (only for means), alpha, and power. It outputs the total sample size and number of weeks required to detect with statistical significance a given lift over the baseline. If you find an experiment design that you like, you can give it a name and click 'Save' to record it in the History tab. You can then right click the history table to export it as a CSV.
+This is an app for estimating the sample size and amount of time needed to run an A/B test. It takes the following parameters as input: users per week, percent of traffic, baseline, standard deviation (only for means), alpha, and power. It outputs the total sample size and number of weeks required to detect with statistical significance a given lift over the baseline. If you find an experiment design that you like, you can give it a name and click 'Save' to record it in the History tab. You can then right click the history table to export it as a CSV.
 
 ## Users per Week
 The number of users per week that will be included in the experiment.
