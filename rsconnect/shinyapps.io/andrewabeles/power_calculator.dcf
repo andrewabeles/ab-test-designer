@@ -5,7 +5,7 @@ account: andrewabeles
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4520047
-bundleId: 4951865
+bundleId: 6472499
 url: https://andrewabeles.shinyapps.io/power_calculator/
-when: 1629687686.45668
-lastSyncTime: 1629687686.45668
+when: 1667502050.06762
+lastSyncTime: 1667502050.06766
