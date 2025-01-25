@@ -59,7 +59,7 @@ with st.expander("About"):
         Use this app to help design and plan A/B tests. Start by entering the experiment's details in the sidebar. 
         Then use the chart to see the minimum delta between the test and control groups the experiment would be
         able to detect with statistical significance after a given number of periods. Use this information to 
-        understand how long the A/B test would have to run to provide the insights needed to make a decision. 
+        understand how long the A/B test would have to run to provide the confidence needed to make a decision. 
         Download the raw data for reference and sharing.   
     """)
 
