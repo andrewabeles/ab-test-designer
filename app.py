@@ -5,43 +5,52 @@ from statsmodels.stats.proportion import proportion_effectsize
 from statsmodels.stats.power import zt_ind_solve_power, tt_ind_solve_power
 import plotly.express as px
 
-def estimate_sample_sizes(control_mean, control_std=None, deltas=None, metric_type='proportion', alpha=0.05, power=0.8, alternative='two-sided'):
+def get_min_detectable_difs(control_mean, control_std=None, subjects_per_period=1000, max_periods=10, metric_type='proportion', alpha=0.05, power=0.8, alternative='two-sided'):
     results = {
         'test_mean': [],
-        'delta': [],
+        'means_dif': [],
         'effect_size': [],
-        'total_sample_size': []
+        'total_sample_size': [],
+        'periods': []
     }
 
-    for d in deltas:
-        test_mean = control_mean + d 
+    for p in range(1, max_periods+1):
+        total_sample_size = p * subjects_per_period 
+        sample_size_per_group = total_sample_size / 2
         if metric_type == 'proportion':
-            effect_size = proportion_effectsize(test_mean, control_mean)
-            sample_size_per_group = zt_ind_solve_power(
-                effect_size=effect_size,
+            effect_size = zt_ind_solve_power(
+                nobs1=sample_size_per_group,
                 alpha=alpha,
                 power=power,
-                alternative=alternative
+                alternative='larger' if alternative == 'smaller' else alternative,
+                effect_size=None
             )
         elif metric_type == 'mean':
-            effect_size = d / control_std
-            sample_size_per_group = tt_ind_solve_power(
-                effect_size=effect_size,
+            effect_size = tt_ind_solve_power(
+                nobs1=sample_size_per_group,
                 alpha=alpha,
                 power=power,
-                alternative=alternative
+                alternative='larger' if alternative == 'smaller' else alternative,
+                effect_size=None
             )
         
-        # handle edge-case where statsmodels returns [10.0] instead of very small sample sizes
-        if type(sample_size_per_group) != float: 
-            sample_size_per_group = 1
-        
-        total_sample_size = np.ceil(sample_size_per_group) * 2
-        
+        # handle edge case where statsmodels returns iterable
+        try:
+            effect_size = effect_size[0]
+        except:
+            pass
+
+        if alternative == 'smaller':
+            effect_size *= -1
+
+
+        means_dif = effect_size * control_std 
+        test_mean = control_mean + means_dif 
         results['test_mean'].append(test_mean)
-        results['delta'].append(d)
+        results['means_dif'].append(means_dif)
         results['effect_size'].append(effect_size)
         results['total_sample_size'].append(total_sample_size)
+        results['periods'].append(p)
 
     results['metric_type'] = metric_type
     results['alternative_hypothesis'] = alternative
@@ -49,17 +58,25 @@ def estimate_sample_sizes(control_mean, control_std=None, deltas=None, metric_ty
     results['power'] = power 
     results['control_mean'] = control_mean
     results['control_std'] = control_std
+    results['subjects_per_period'] = subjects_per_period
 
-    return pd.DataFrame(results)
+    df = pd.DataFrame(results)
+
+    # only include results within possible range 
+    df = df.query("test_mean >= 0")
+    if metric_type == 'proportion':
+        df = df.query("test_mean <= 1")
+
+    return df
 
 st.title("A/B Test Designer")
 
 with st.expander("About"):
     st.write("""
-        Use this app to help design and plan A/B tests. Start by entering the experiment's details in the sidebar. 
-        Then use the chart to see the minimum delta between the test and control groups the experiment would be
+        Use this app to help design and plan A/B tests. Start by entering the experiment details in the sidebar. 
+        Then use the chart to see the minimum difference between the test and control group means the experiment would be
         able to detect with statistical significance after a given number of periods. Use this information to 
-        understand how long the A/B test would have to run to provide the confidence needed to make a decision. 
+        understand how long the A/B test would need to run in order to provide the information required to make a decision. 
         Download the raw data for reference and sharing.   
     """)
 
@@ -68,10 +85,17 @@ with st.sidebar:
         "Subjects per Period", 
         min_value=1, 
         value=1000,
-        help="""Number of unique subjects (users, devices, etc.) you expect to enter the test each period (day, week, etc.)."""
+        help="""Number of unique subjects (users, devices, etc.) you expect to enter the experiment each period (day, week, etc.)."""
     )
 
-    metric_type = st.radio(
+    max_periods = st.number_input(
+        "Max. Periods",
+        min_value=1,
+        value=14,
+        help="""Maximum number of periods (days, weeks, etc.) you are willing to run the experiment."""
+    )
+
+    metric_type = st.selectbox(
         "Metric Type", 
         ["proportion", "mean"],
         help="""Select 'proportion' if the test's success metric is a conversion rate, and 'mean' if it's an average (e.g. revenue per user)."""
@@ -79,9 +103,9 @@ with st.sidebar:
 
     control_mean = st.number_input(
         "Metric Baseline", 
-        min_value=0.0 if metric_type == 'proportion' else 0, 
+        min_value=0.0, 
         max_value=1.0 if metric_type == 'proportion' else None,
-        value=0.1 if metric_type == 'proportion' else 10,
+        value=0.1 if metric_type == 'proportion' else 10.0,
         help="""Expected value of the success metric for the control group."""
     )
 
@@ -90,8 +114,8 @@ with st.sidebar:
     else:
         control_std = st.number_input(
             "Metric Standard Deviation", 
-            min_value=0, 
-            value=3,
+            min_value=0.0, 
+            value=3.0,
             help="""Expected standard deviation of the success metric for the control group."""
         )
 
@@ -116,33 +140,23 @@ with st.sidebar:
         help="""1 - False Negative Rate. The probability the test will detect a minimum effect size with statistical significance if it truly exists."""
     )
 
-min_delta = 0
-max_delta = 2 * control_mean 
-if metric_type == 'proportion':
-    max_delta = 1 - control_mean
-if alternative == 'smaller':
-    max_delta = -1 * max_delta
-deltas = np.linspace(min_delta, max_delta, num=100)[1:]
-
-results = estimate_sample_sizes(
+results = get_min_detectable_difs(
     control_mean,
     control_std=control_std,
-    deltas=deltas,
+    max_periods=max_periods,
+    subjects_per_period=subjects_per_period,
     metric_type=metric_type,
     alpha=alpha,
     power=power,
     alternative=alternative
 )
 
-results['subjects_per_period'] = subjects_per_period 
-results['periods'] = results['total_sample_size'] / results['subjects_per_period']
-
 fig = px.line(
     results,
-    y='delta',
+    y='means_dif',
     x='periods',
     markers=True,
-    title='Minimum Detectable Delta by Test Duration'
+    title='Minimum Detectable Difference by Test Duration'
 )
 
 st.plotly_chart(fig)
@@ -153,9 +167,9 @@ results[[
     'alpha',
     'power',
     'control_mean',
-    'control_std',
     'test_mean',
-    'delta',
+    'means_dif',
+    'control_std',
     'effect_size',
     'total_sample_size',
     'subjects_per_period',
