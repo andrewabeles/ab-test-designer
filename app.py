@@ -71,7 +71,7 @@ def get_min_detectable_difs(control_mean, control_std=None, subjects_per_period=
 
 st.title("A/B Test Designer")
 
-with st.expander("About"):
+with st.expander("About", expanded=True):
     st.write("""
         Use this app to help design and plan A/B tests. Start by entering the experiment details in the sidebar. 
         Then use the chart to see the minimum difference between the test and control group means the experiment would be
