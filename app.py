@@ -140,38 +140,41 @@ with st.sidebar:
         help="""1 - False Negative Rate. The probability the test will detect a minimum effect size with statistical significance if it truly exists."""
     )
 
-results = get_min_detectable_difs(
-    control_mean,
-    control_std=control_std,
-    max_periods=max_periods,
-    subjects_per_period=subjects_per_period,
-    metric_type=metric_type,
-    alpha=alpha,
-    power=power,
-    alternative=alternative
-)
+tab1, tab2 = st.tabs(["Estimate Runtime", "Analyze Results"])
 
-fig = px.line(
-    results,
-    y='means_dif',
-    x='periods',
-    markers=True,
-    title='Minimum Detectable Difference by Test Duration'
-)
+with tab1:
+    results = get_min_detectable_difs(
+        control_mean,
+        control_std=control_std,
+        max_periods=max_periods,
+        subjects_per_period=subjects_per_period,
+        metric_type=metric_type,
+        alpha=alpha,
+        power=power,
+        alternative=alternative
+    )
 
-st.plotly_chart(fig)
+    fig = px.line(
+        results,
+        y='means_dif',
+        x='periods',
+        markers=True,
+        title='Minimum Detectable Difference by Test Duration'
+    )
 
-results[[
-    'metric_type',
-    'alternative_hypothesis',
-    'alpha',
-    'power',
-    'control_mean',
-    'test_mean',
-    'means_dif',
-    'control_std',
-    'effect_size',
-    'total_sample_size',
-    'subjects_per_period',
-    'periods'
-]]
+    st.plotly_chart(fig)
+
+    results[[
+        'metric_type',
+        'alternative_hypothesis',
+        'alpha',
+        'power',
+        'control_mean',
+        'test_mean',
+        'means_dif',
+        'control_std',
+        'effect_size',
+        'total_sample_size',
+        'subjects_per_period',
+        'periods'
+    ]]
