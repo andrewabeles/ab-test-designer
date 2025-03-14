@@ -113,3 +113,15 @@ with tab1:
         'subjects_per_period',
         'periods'
     ]]
+
+with tab2:
+    uploaded_file = st.file_uploader("Upload Test Results", type='csv')
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+        col1, col2 = st.columns(2)
+        with col1:
+            y = st.selectbox("Success Metric", [c for c in df.columns])
+        with col2:
+            group_id = st.selectbox("Group Identifier", [c for c in df.columns])
+
+    
