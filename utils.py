@@ -70,62 +70,70 @@ def get_min_detectable_difs(control_mean, control_std=None, n_groups=2, subjects
     return df
 
 def get_test_results(df, group, metric, metric_type='proportion', alpha=0.05, alternative='two-sided'):
-    if metric_type not in ['proportion', 'mean']:
-        raise ValueError("Invalid metric type. Must be 'proportion' or 'mean'.")
-    if alternative not in ['two-sided', 'larger', 'smaller']:
-        raise ValueError("Invalid alternative hypothesis. Must be 'two-sided', 'larger', or 'smaller'.")
+    results = {}
+    samples = []
+    for g in df[group].unique():
+        x = df[df[group] == g][metric]
+        sample = Sample(x, name=g, alpha=alpha, metric_type=metric_type)
+        samples.append(sample)
+    differences = pd.DataFrame()
+    for i in samples:
+        for j in samples:
+            if i != j:
+                differences.loc[i.name, j.name] = i.test_difference(j, alpha=alpha, alternative=alternative) 
+    results['samples'] = {s.name: s for s in samples}
+    results['differences'] = differences
+    return results
 
-    values_test = df[df[group] == 'test'][metric]
-    values_ctrl = df[df[group] == 'control'][metric]
-    n_test = len(values_test)
-    n_ctrl = len(values_ctrl)
-    dof = n_test + n_ctrl - 2 
-    sum_test = values_test.sum()
-    sum_ctrl = values_ctrl.sum()
-    mean_test = values_test.mean()
-    mean_ctrl = values_ctrl.mean()
-    var_test = np.var(values_test, ddof=1)
-    var_ctrl = np.var(values_ctrl, ddof=1)
-    diff = mean_test - mean_ctrl 
-
-    if metric_type == 'mean':
-        # T-Test for two means 
-        stat, p_val = ttest_ind(values_test, values_ctrl, alternative=alternative)
-        # Compute standard error 
-        se = np.sqrt((var_test/n_test) + (var_ctrl/n_ctrl))
-        # Get critical value 
-        if alternative == 'two-sided':
-            critical_value = stats.t.ppf(1 - alpha/2, df=dof)
+class Sample:
+    def __init__(self, x, name=None, alpha=0.05, metric_type='proportion'):
+        if metric_type not in ['proportion', 'mean']:
+            raise ValueError("Invalid metric type. Must be 'proportion' or 'mean'.")
+        self.name = name 
+        self.x = x
+        self.alpha = alpha
+        self.metric_type = metric_type
+        self.n = len(x)
+        self.mean = x.mean()
+        self.sum = x.sum() 
+        if metric_type == 'proportion':
+            self.critical_value = stats.norm.ppf(1 - alpha)
+            self.standard_error = np.sqrt(self.mean * (1 - self.mean) / self.n)
         else:
-            critical_value = stats.t.ppf(1 - alpha, df=dof)
+            self.critical_value = stats.t.ppf(1 - alpha/2, df=self.n - 1)
+            self.standard_error = x.std() / np.sqrt(self.n)
+        self.margin_of_error = self.critical_value * self.standard_error
+        self.confidence_interval = (self.mean - self.margin_of_error, self.mean + self.margin_of_error)
 
-    elif metric_type == 'proportion':
-        # Z-test for two proportions 
-        count = np.array([sum_test, sum_ctrl])
-        nobs = np.array([n_test, n_ctrl])
-        stat, p_val = proportions_ztest(count, nobs, alternative=alternative)
-        # Compute standard error 
-        p_pool = (sum_test + sum_ctrl) / (n_test + n_ctrl)
-        se = np.sqrt(p_pool * (1 - p_pool) * (1 / n_test + 1 / n_ctrl))
-        # Get critical value
-        if alternative == 'two-sided':
-            critical_value = stats.norm.ppf(1 - alpha/2)
+    def test_difference(self, control_sample, alpha=0.05, alternative='two-sided'):
+        dif = SampleDifference(self, control_sample, alpha=alpha, alternative=alternative)
+        return dif
+
+class SampleDifference:
+    def __init__(self, sample_test, sample_control, alpha=0.05, alternative='two-sided'):
+        if alternative not in ['two-sided', 'larger', 'smaller']:
+            raise ValueError("Invalid alternative hypothesis. Must be 'two-sided', 'larger', or 'smaller'.")
+        if sample_test.metric_type != sample_control.metric_type:
+            raise ValueError("Cannot compare samples with different metric types.")
+        self.metric_type = sample_test.metric_type
+        self.sample_test = sample_test
+        self.sample_control = sample_control 
+        self.n = sample_test.n + sample_control.n
+        self.alpha = alpha
+        self.alternative = alternative
+        self.difference = sample_test.mean - sample_control.mean
+        if self.metric_type == 'proportion':
+            self.standard_error = np.sqrt(sample_test.mean * (1 - sample_test.mean) / sample_test.n + sample_control.mean * (1 - sample_control.mean) / sample_control.n)
+            self.critical_value = stats.norm.ppf(1 - alpha)
+            self.statistic, self.p_value = proportions_ztest([sample_test.sum, sample_control.sum], [sample_test.n, sample_control.n], alternative=self.alternative)
         else:
-            critical_value = stats.norm.ppf(1 - alpha)
-
-    # Compute confidence interval 
-    if alternative == 'two-sided':
-        ci_low, ci_high = diff - critical_value * se, diff + critical_value * se
-    elif alternative == 'larger':
-        ci_low, ci_high = diff - critical_value * se, np.inf 
-    elif alternative == 'smaller':
-        ci_low, ci_high = -np.inf, diff + critical_value * se
-
-    return {
-        'control': mean_ctrl,
-        'test': mean_test,
-        'difference': diff,
-        'statistic': stat,
-        'p_value': p_val,
-        'confidence_interval': (ci_low, ci_high)
-    }
+            self.standard_error = np.sqrt(sample_test.standard_error**2 / sample_test.n + sample_control.standard_error**2 / sample_control.n)
+            self.critical_value = stats.t.ppf(1 - alpha/2, df=self.n - 2)
+            self.statistic, self.p_value = ttest_ind(sample_test.x, sample_control.x, alternative=self.alternative)
+        self.margin_of_error = self.critical_value * self.standard_error
+        if self.alternative == 'two-sided':
+            self.confidence_interval = (self.difference - self.margin_of_error, self.difference + self.margin_of_error)
+        elif self.alternative == 'larger':
+            self.confidence_interval = (self.difference - self.margin_of_error, np.inf)
+        else:
+            self.confidence_interval = (-np.inf, self.difference + self.margin_of_error)

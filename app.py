@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd 
 import numpy as np
 import plotly.express as px
-from utils import get_min_detectable_difs
+from utils import get_min_detectable_difs, get_test_results
 
 st.title("A/B Test Designer")
 
@@ -131,5 +131,14 @@ with tab2:
             y = st.selectbox("Success Metric", [c for c in df.columns])
         with col2:
             group_id = st.selectbox("Group Identifier", [c for c in df.columns])
-
+        test_results = get_test_results(df, group_id, y, metric_type=metric_type, alpha=alpha, alternative=alternative)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric('Test Mean', test_results['mean_test'])
+            st.metric('Statistic', test_results['statistic'])
+        with col2:
+            st.metric('Control Mean', test_results['mean_control'])
+            st.metric('P-value', test_results['p_value'])
+        with col3:
+            st.metric('Difference', test_results['difference'])
     
