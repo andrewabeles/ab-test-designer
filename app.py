@@ -102,25 +102,27 @@ with tab1:
         y='means_dif',
         x='periods',
         markers=True,
-        title='Minimum Detectable Difference by Test Duration'
+        title='Minimum Detectable Difference by Test Duration',
+        labels={'means_dif': 'Difference in Means', 'periods': 'Periods'}
     )
 
     st.plotly_chart(fig)
 
-    results[[
-        'metric_type',
-        'alternative_hypothesis',
-        'alpha',
-        'power',
-        'control_mean',
-        'test_mean',
-        'means_dif',
-        'control_std',
-        'effect_size',
-        'total_sample_size',
-        'subjects_per_period',
-        'periods'
-    ]]
+    with st.expander("Raw Data", expanded=False):
+        results[[
+            'metric_type',
+            'alternative_hypothesis',
+            'alpha',
+            'power',
+            'control_mean',
+            'test_mean',
+            'means_dif',
+            'control_std',
+            'effect_size',
+            'total_sample_size',
+            'subjects_per_period',
+            'periods'
+        ]]
 
 with tab2:
     uploaded_file = st.file_uploader("Upload Test Results", type='csv')
@@ -132,13 +134,4 @@ with tab2:
         with col2:
             group_id = st.selectbox("Group Identifier", [c for c in df.columns])
         test_results = get_test_results(df, group_id, y, metric_type=metric_type, alpha=alpha, alternative=alternative)
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric('Test Mean', test_results['mean_test'])
-            st.metric('Statistic', test_results['statistic'])
-        with col2:
-            st.metric('Control Mean', test_results['mean_control'])
-            st.metric('P-value', test_results['p_value'])
-        with col3:
-            st.metric('Difference', test_results['difference'])
-    
+        test_results
