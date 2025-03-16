@@ -130,7 +130,7 @@ with tab2:
         df = pd.read_csv(uploaded_file)
         col1, col2 = st.columns(2)
         with col1:
-            y = st.selectbox("Success Metric", [c for c in df.columns])
+            y = st.selectbox("Success Metric", [c for c in df.select_dtypes(include='number').columns])
         with col2:
             group_id = st.selectbox("Group Identifier", [c for c in df.columns])
         test_results = get_test_results(df, group_id, y, metric_type=metric_type, alpha=alpha, alternative=alternative)
