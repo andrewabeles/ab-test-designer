@@ -5,7 +5,7 @@ from statsmodels.stats.weightstats import ttest_ind
 from statsmodels.stats.proportion import proportion_effectsize, proportions_ztest
 from statsmodels.stats.power import zt_ind_solve_power, tt_ind_solve_power
 
-def get_min_detectable_difs(control_mean, control_std=None, subjects_per_period=1000, max_periods=10, metric_type='proportion', alpha=0.05, power=0.8, alternative='two-sided'):
+def get_min_detectable_difs(control_mean, control_std=None, n_groups=2, subjects_per_period=1000, max_periods=10, metric_type='proportion', alpha=0.05, power=0.8, alternative='two-sided'):
     results = {
         'test_mean': [],
         'means_dif': [],
@@ -16,7 +16,7 @@ def get_min_detectable_difs(control_mean, control_std=None, subjects_per_period=
 
     for p in range(1, max_periods+1):
         total_sample_size = p * subjects_per_period 
-        sample_size_per_group = total_sample_size / 2
+        sample_size_per_group = total_sample_size / n_groups
         if metric_type == 'proportion':
             effect_size = zt_ind_solve_power(
                 nobs1=sample_size_per_group,

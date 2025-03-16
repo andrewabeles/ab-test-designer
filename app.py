@@ -16,6 +16,13 @@ with st.expander("About", expanded=True):
     """)
 
 with st.sidebar:
+    n_groups = st.number_input(
+        "Num. Groups",
+        min_value=2,
+        value=2,
+        help="""Number of groups, or variants, you will test, including the control."""
+    )
+
     subjects_per_period = st.number_input(
         "Subjects per Period", 
         min_value=1, 
@@ -81,6 +88,7 @@ with tab1:
     results = get_min_detectable_difs(
         control_mean,
         control_std=control_std,
+        n_groups=n_groups,
         max_periods=max_periods,
         subjects_per_period=subjects_per_period,
         metric_type=metric_type,
