@@ -128,10 +128,24 @@ with tab2:
     uploaded_file = st.file_uploader("Upload Test Results", type='csv')
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
-            y = st.selectbox("Success Metric", [c for c in df.select_dtypes(include='number').columns])
+            y = st.selectbox(
+                "Success Metric", 
+                [c for c in df.select_dtypes(include='number').columns],
+                help="""Select the column containing the success metric values."""
+            )
         with col2:
-            group_id = st.selectbox("Group Identifier", [c for c in df.columns if c != y])
+            group_id = st.selectbox(
+                "Group Identifier", 
+                [c for c in df.columns if c != y],
+                help="""Select the column containing the group indicators."""
+            )
+        with col3:
+            control_id = st.selectbox(
+                "Control Group", 
+                [i for i in df[group_id].unique()],
+                help="""Select the control or reference group against which the other groups will be measured."""
+            )
         test_results = get_test_results(df, group_id, y, metric_type=metric_type, alpha=alpha, alternative=alternative)
         st.pyplot(plot_distributions(test_results))
