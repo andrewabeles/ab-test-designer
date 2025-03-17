@@ -101,6 +101,7 @@ class Sample:
         self.n = len(x)
         self.mean = x.mean()
         self.sum = x.sum() 
+        self.var = np.var(x, ddof=1)
         if metric_type == 'proportion':
             self.critical_value = stats.norm.ppf(1 - alpha)
             self.standard_error = np.sqrt(self.mean * (1 - self.mean) / self.n)
@@ -127,18 +128,20 @@ class SampleDifference:
         self.alpha = alpha
         self.alternative = alternative
         self.difference = sample_test.mean - sample_control.mean
+        auc = 1 - alpha/2 if alternative == 'two-sided' else 1 - alpha
         if self.metric_type == 'proportion':
             self.statistic, self.p_value = proportions_ztest([sample_test.sum, sample_control.sum], [sample_test.n, sample_control.n], alternative=self.alternative)
-            self.standard_error = np.sqrt(sample_test.mean * (1 - sample_test.mean) / sample_test.n + sample_control.mean * (1 - sample_control.mean) / sample_control.n)
-            self.critical_value = stats.norm.ppf(1 - alpha)
+            p_pooled = (sample_test.sum + sample_control.sum) / (sample_test.n + sample_control.n)
+            self.standard_error = np.sqrt(p_pooled * (1 - p_pooled) * (1/sample_test.n + 1/sample_control.n))
+            self.critical_value = stats.norm.ppf(auc)
         else:
             self.statistic, self.p_value, self.dof = ttest_ind(sample_test.x, sample_control.x, alternative=self.alternative)
-            self.standard_error = np.sqrt(sample_test.standard_error**2 / sample_test.n + sample_control.standard_error**2 / sample_control.n)
-            self.critical_value = stats.t.ppf(1 - alpha/2, df=self.dof)
+            self.standard_error = np.sqrt(sample_test.var/sample_test.n + sample_control.var/sample_control.n)
+            self.critical_value = stats.t.ppf(auc, df=self.dof)
         self.margin_of_error = self.critical_value * self.standard_error
-        if self.alternative == 'two-sided':
+        if alternative == 'two-sided':
             self.confidence_interval = (self.difference - self.margin_of_error, self.difference + self.margin_of_error)
-        elif self.alternative == 'larger':
+        elif alternative == 'larger':
             self.confidence_interval = (self.difference - self.margin_of_error, np.inf)
         else:
             self.confidence_interval = (-np.inf, self.difference + self.margin_of_error)
