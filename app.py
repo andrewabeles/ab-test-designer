@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import math
-from utils import get_min_detectable_difs, get_test_results, summarize_test_results, plot_distributions, plot_confidence_intervals
+from utils import get_min_detectable_difs, TestResults
 
 st.title("A/B Test Designer")
 
@@ -148,11 +148,11 @@ with tab2:
                 [i for i in df[group_id].unique()],
                 help="""Select the control or reference group against which the other groups will be measured."""
             )
-        test_results = get_test_results(df, group_id, y, metric_type=metric_type, alpha=alpha, alternative=alternative)
+        test_results = TestResults(data=df, metric=y, group=group_id, control=control_id, metric_type=metric_type, alpha=alpha, alternative=alternative)
         col1, col2 = st.columns(2)
         with col1:
-            st.plotly_chart(plot_distributions(test_results))
+            st.plotly_chart(test_results.plot_samples())
         with col2:
-            st.plotly_chart(plot_confidence_intervals(test_results, control_id))
-        test_results_summary = summarize_test_results(test_results, control_id)
+            st.plotly_chart(test_results.plot_differences())
+        test_results_summary = test_results.summarize()
         test_results_summary

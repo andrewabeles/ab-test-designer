@@ -74,34 +74,74 @@ def get_min_detectable_difs(control_mean, control_std=None, n_groups=2, subjects
 
     return df
 
-def summarize_test_results(results, control):
-    df = pd.DataFrame()
-    for k, v in results['samples'].items():
-        df.loc[k, 'sample_size'] = v.n 
-        df.loc[k, 'mean'] = v.mean
-        if k != control:
-          dif = results['differences'][control][k]
-          df.loc[k, 'difference'] = dif.difference
-          df.loc[k, 'lower_bound'] = dif.confidence_interval[0]
-          df.loc[k, 'upper_bound'] = dif.confidence_interval[1]
-          df.loc[k, 'p_value'] = round(dif.p_value, 4)
-    return df
+class TestResults():
+    def __init__(self, data=None, metric=None, group=None, control=None, metric_type='proportion', alpha=0.05, alternative='two-sided'):
+        self.data = data 
+        self.metric = metric 
+        self.group = group 
+        self.control = control 
+        self.metric_type = metric_type 
+        self.alpha = alpha
+        self.alternative = alternative 
+        samples = []
+        for g in self.data[self.group].unique():
+            x = self.data[self.data[self.group] == g][self.metric]
+            sample = Sample(x, name=g, alpha=self.alpha, metric_type=self.metric_type)
+            samples.append(sample)
+        differences = pd.DataFrame()
+        for i in samples:
+            for j in samples:
+                if i != j:
+                    differences.loc[i.name, j.name] = i.test_difference(j, alpha=alpha, alternative=alternative) 
+        self.samples = {s.name: s for s in samples}
+        self.differences = differences     
 
-def get_test_results(df, group, metric, metric_type='proportion', alpha=0.05, alternative='two-sided'):
-    results = {'metric_type': metric_type}
-    samples = []
-    for g in df[group].unique():
-        x = df[df[group] == g][metric]
-        sample = Sample(x, name=g, alpha=alpha, metric_type=metric_type)
-        samples.append(sample)
-    differences = pd.DataFrame()
-    for i in samples:
-        for j in samples:
-            if i != j:
-                differences.loc[i.name, j.name] = i.test_difference(j, alpha=alpha, alternative=alternative) 
-    results['samples'] = {s.name: s for s in samples}
-    results['differences'] = differences
-    return results
+    def summarize(self):
+        df = pd.DataFrame()
+        for k, v in self.samples.items():
+            df.loc[k, 'sample_size'] = v.n 
+            df.loc[k, 'mean'] = v.mean 
+            if k != self.control: 
+                dif = self.differences[self.control][k]
+                df.loc[k, 'difference'] = dif.difference 
+                df.loc[k, 'lower_bound'] = dif.confidence_interval[0]
+                df.loc[k, 'upper_bound'] = dif.confidence_interval[1]
+                df.loc[k, 'p_value'] = round(dif.p_value, 4)
+        return df     
+
+    def plot_samples(self):
+        if self.metric_type == 'proportion':
+            fig = px.bar(
+                x=[k for k in self.samples.keys()],
+                y=[v.mean for k, v in self.samples.items()],
+                error_y=[v.margin_of_error for k, v in self.samples.items()],
+                labels={'x': 'Group', 'y': 'Proportion'}
+            )
+        else:
+            df = pd.concat([pd.DataFrame({k: v.x for k, v in self.samples.items()})])
+            df_melt = pd.melt(df, var_name='group')
+            fig = px.histogram(
+                df_melt, 
+                x='value', 
+                color='group', 
+                barmode='overlay', 
+                marginal='box',
+                labels={'value': 'Value', 'group': 'Group'}
+            )
+        fig.update_layout(title='Distribution by Group')
+        return fig
+
+    def plot_differences(self):
+        difs = self.differences[self.control].dropna()
+        fig = px.scatter(
+            x=[i.difference for i in difs.values],
+            y=difs.index,
+            error_x=[i.margin_of_error for i in difs.values],
+            labels={'x': 'Difference vs. Control', 'y': 'Group'},
+            title='Difference Confidence Intervals'
+        )    
+        fig.add_vline(x=0, line_width=3, line_dash='dash', line_color='gray')
+        return fig
 
 class Sample:
     def __init__(self, x, name=None, alpha=0.05, metric_type='proportion'):
@@ -158,37 +198,3 @@ class SampleDifference:
             self.confidence_interval = (self.difference - self.margin_of_error, np.inf)
         else:
             self.confidence_interval = (-np.inf, self.difference + self.margin_of_error)
-
-def plot_distributions(results):
-    if results['metric_type'] == 'proportion':
-        fig = px.bar(
-            x=[k for k in results['samples'].keys()],
-            y=[v.mean for k, v in results['samples'].items()],
-            error_y=[v.margin_of_error for k, v in results['samples'].items()],
-            labels={'x': 'Group', 'y': 'Proportion'}
-        )
-    else:
-        df = pd.concat([pd.DataFrame({k: v.x for k, v in results['samples'].items()})])
-        df_melt = pd.melt(df, var_name='group')
-        fig = px.histogram(
-            df_melt, 
-            x='value', 
-            color='group', 
-            barmode='overlay', 
-            marginal='box',
-            labels={'value': 'Value', 'group': 'Group'}
-        )
-    fig.update_layout(title='Distribution by Group')
-    return fig 
-
-def plot_confidence_intervals(results, control):
-    difs = results['differences'][control].dropna()
-    fig = px.scatter(
-        x=[i.difference for i in difs.values],
-        y=difs.index,
-        error_x=[i.margin_of_error for i in difs.values],
-        labels={'x': 'Difference vs. Control', 'y': 'Group'},
-        title='Difference Confidence Intervals'
-    )    
-    fig.add_vline(x=0, line_width=3, line_dash='dash', line_color='gray')
-    return fig
