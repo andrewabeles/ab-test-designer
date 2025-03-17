@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import math
-from utils import get_min_detectable_difs, get_test_results, plot_distributions, plot_confidence_intervals
+from utils import get_min_detectable_difs, get_test_results, summarize_test_results, plot_distributions, plot_confidence_intervals
 
 st.title("A/B Test Designer")
 
@@ -154,3 +154,5 @@ with tab2:
             st.plotly_chart(plot_distributions(test_results))
         with col2:
             st.plotly_chart(plot_confidence_intervals(test_results, control_id))
+        test_results_summary = summarize_test_results(test_results, control_id)
+        test_results_summary

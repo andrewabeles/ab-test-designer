@@ -74,6 +74,19 @@ def get_min_detectable_difs(control_mean, control_std=None, n_groups=2, subjects
 
     return df
 
+def summarize_test_results(results, control):
+    df = pd.DataFrame()
+    for k, v in results['samples'].items():
+        df.loc[k, 'sample_size'] = v.n 
+        df.loc[k, 'mean'] = v.mean
+        if k != control:
+          dif = results['differences'][control][k]
+          df.loc[k, 'difference'] = dif.difference
+          df.loc[k, 'lower_bound'] = dif.confidence_interval[0]
+          df.loc[k, 'upper_bound'] = dif.confidence_interval[1]
+          df.loc[k, 'p_value'] = round(dif.p_value, 4)
+    return df
+
 def get_test_results(df, group, metric, metric_type='proportion', alpha=0.05, alternative='two-sided'):
     results = {'metric_type': metric_type}
     samples = []
