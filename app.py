@@ -153,4 +153,4 @@ with tab2:
         with col1:
             st.plotly_chart(plot_distributions(test_results))
         with col2:
-            st.pyplot(plot_confidence_intervals(test_results, control_id))
+            st.plotly_chart(plot_confidence_intervals(test_results, control_id))

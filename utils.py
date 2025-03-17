@@ -148,44 +148,34 @@ class SampleDifference:
 
 def plot_distributions(results):
     if results['metric_type'] == 'proportion':
-        fig = go.Figure()
-        fig.add_trace(
-            go.Bar(
-                x=[k for k in results['samples'].keys()],
-                y=[v.mean for k, v in results['samples'].items()],
-                error_y=dict(
-                    type='data',
-                    array=[v.margin_of_error for k, v in results['samples'].items()],
-                    visible=True
-                )
-            )
-        )
-        fig.update_layout(
-            xaxis_title='Group',
-            yaxis_title='Proportion'
+        fig = px.bar(
+            x=[k for k in results['samples'].keys()],
+            y=[v.mean for k, v in results['samples'].items()],
+            error_y=[v.margin_of_error for k, v in results['samples'].items()],
+            labels={'x': 'Group', 'y': 'Proportion'}
         )
     else:
         df = pd.concat([pd.DataFrame({k: v.x for k, v in results['samples'].items()})])
         df_melt = pd.melt(df, var_name='group')
-        fig = px.histogram(df_melt, x='value', color='group', barmode='overlay', marginal='box')
-        fig.update_layout(
-            xaxis_title='Value',
-            yaxis_title='Count'
+        fig = px.histogram(
+            df_melt, 
+            x='value', 
+            color='group', 
+            barmode='overlay', 
+            marginal='box',
+            labels={'value': 'Value', 'group': 'Group'}
         )
     fig.update_layout(title='Distribution by Group')
     return fig 
 
 def plot_confidence_intervals(results, control):
     difs = results['differences'][control].dropna()
-    fig, ax = plt.subplots()
-    ax = plt.errorbar(
-        y=difs.index,
+    fig = px.scatter(
         x=[i.difference for i in difs.values],
-        xerr=[i.margin_of_error for i in difs.values],
-        fmt='o'
-    )
-    plt.axvline(x=0, linestyle='--', color='gray')
-    plt.xlabel('Difference vs. Control')
-    plt.ylabel('Group')
-    plt.title('Confidence Intervals')
+        y=difs.index,
+        error_x=[i.margin_of_error for i in difs.values],
+        labels={'x': 'Difference vs. Control', 'y': 'Group'},
+        title='Difference Confidence Intervals'
+    )    
+    fig.add_vline(x=0, line_width=3, line_dash='dash', line_color='gray')
     return fig
