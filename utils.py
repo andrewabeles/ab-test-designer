@@ -122,11 +122,10 @@ class TestResults():
             df_melt = pd.melt(df, var_name='group')
             fig = px.histogram(
                 df_melt, 
-                x='value', 
+                x=self.metric, 
                 color='group', 
                 barmode='overlay', 
-                marginal='box',
-                labels={'value': 'Value', 'group': 'Group'}
+                marginal='box'
             )
         fig.update_layout(title='Distribution by Group')
         return fig
@@ -137,7 +136,7 @@ class TestResults():
             x=[i.difference for i in difs.values],
             y=difs.index,
             error_x=[i.margin_of_error for i in difs.values],
-            labels={'x': 'Difference vs. Control', 'y': 'Group'},
+            labels={'x': f'difference vs. {self.control}', 'y': 'group'},
             title='Difference Confidence Intervals'
         )    
         fig.add_vline(x=0, line_width=3, line_dash='dash', line_color='gray')

@@ -104,7 +104,7 @@ with tab1:
         x='periods',
         markers=True,
         title='Minimum Detectable Difference by Test Duration',
-        labels={'means_dif': 'Difference in Means', 'periods': 'Periods'}
+        labels={'means_dif': 'difference in means'}
     )
 
     st.plotly_chart(fig)
