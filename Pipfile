@@ -9,6 +9,8 @@ numpy = "*"
 statsmodels = "*"
 plotly-express = "*"
 streamlit = "*"
+matplotlib = "*"
+seaborn = "*"
 
 [dev-packages]
 

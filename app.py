@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd 
 import numpy as np
 import plotly.express as px
-from utils import get_min_detectable_difs, get_test_results
+from utils import get_min_detectable_difs, get_test_results, plot_distributions
 
 st.title("A/B Test Designer")
 
@@ -132,6 +132,6 @@ with tab2:
         with col1:
             y = st.selectbox("Success Metric", [c for c in df.select_dtypes(include='number').columns])
         with col2:
-            group_id = st.selectbox("Group Identifier", [c for c in df.columns])
+            group_id = st.selectbox("Group Identifier", [c for c in df.columns if c != y])
         test_results = get_test_results(df, group_id, y, metric_type=metric_type, alpha=alpha, alternative=alternative)
-        test_results
+        st.pyplot(plot_distributions(test_results))

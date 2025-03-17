@@ -1,5 +1,7 @@
 import pandas as pd 
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from scipy import stats
 from statsmodels.stats.weightstats import ttest_ind
 from statsmodels.stats.proportion import proportion_effectsize, proportions_ztest
@@ -70,7 +72,7 @@ def get_min_detectable_difs(control_mean, control_std=None, n_groups=2, subjects
     return df
 
 def get_test_results(df, group, metric, metric_type='proportion', alpha=0.05, alternative='two-sided'):
-    results = {}
+    results = {'metric_type': metric_type}
     samples = []
     for g in df[group].unique():
         x = df[df[group] == g][metric]
@@ -137,3 +139,30 @@ class SampleDifference:
             self.confidence_interval = (self.difference - self.margin_of_error, np.inf)
         else:
             self.confidence_interval = (-np.inf, self.difference + self.margin_of_error)
+
+def plot_distributions(results):
+    fig, ax = plt.subplots()
+    if results['metric_type'] == 'proportion':
+        ax = plt.bar(
+            [k for k in results['samples'].keys()],
+            [v.mean for k, v in results['samples'].items()],
+            yerr=[v.margin_of_error for k, v in results['samples'].items()]
+        )
+        plt.xlabel('Group')
+        plt.ylabel('Proportion')
+    else:
+        sample_dfs = []
+        for k, v in results['samples'].items():
+            df_tmp = pd.DataFrame({'value': v.x, 'group': k})
+            sample_dfs.append(df_tmp)
+        df = pd.concat(sample_dfs)
+        ax = sns.kdeplot(
+            data=df,
+            x='value',
+            hue='group',
+            fill=True
+        )
+        plt.xlabel('Value')
+        plt.ylabel('Density')
+    plt.title('Distribution by Group')
+    return fig 
