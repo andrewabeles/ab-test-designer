@@ -166,3 +166,18 @@ def plot_distributions(results):
         plt.ylabel('Density')
     plt.title('Distribution by Group')
     return fig 
+
+def plot_confidence_intervals(results, control):
+    difs = results['differences'][control].dropna()
+    fig, ax = plt.subplots()
+    ax = plt.errorbar(
+        y=difs.index,
+        x=[i.difference for i in difs.values],
+        xerr=[i.margin_of_error for i in difs.values],
+        fmt='o'
+    )
+    plt.axvline(x=0, linestyle='--', color='gray')
+    plt.xlabel('Difference vs. Control')
+    plt.ylabel('Group')
+    plt.title('Confidence Intervals')
+    return fig

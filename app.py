@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd 
 import numpy as np
 import plotly.express as px
-from utils import get_min_detectable_difs, get_test_results, plot_distributions
+import math
+from utils import get_min_detectable_difs, get_test_results, plot_distributions, plot_confidence_intervals
 
 st.title("A/B Test Designer")
 
@@ -148,4 +149,8 @@ with tab2:
                 help="""Select the control or reference group against which the other groups will be measured."""
             )
         test_results = get_test_results(df, group_id, y, metric_type=metric_type, alpha=alpha, alternative=alternative)
-        st.pyplot(plot_distributions(test_results))
+        col1, col2 = st.columns(2)
+        with col1:
+            st.pyplot(plot_distributions(test_results))
+        with col2:
+            st.pyplot(plot_confidence_intervals(test_results, control_id))
