@@ -2,6 +2,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go 
+import plotly.figure_factory as ff
 from scipy import stats
 from statsmodels.stats.weightstats import ttest_ind
 from statsmodels.stats.proportion import proportion_effectsize, proportions_ztest
@@ -141,30 +144,32 @@ class SampleDifference:
             self.confidence_interval = (-np.inf, self.difference + self.margin_of_error)
 
 def plot_distributions(results):
-    fig, ax = plt.subplots()
     if results['metric_type'] == 'proportion':
-        ax = plt.bar(
-            [k for k in results['samples'].keys()],
-            [v.mean for k, v in results['samples'].items()],
-            yerr=[v.margin_of_error for k, v in results['samples'].items()]
+        fig = go.Figure()
+        fig.add_trace(
+            go.Bar(
+                x=[k for k in results['samples'].keys()],
+                y=[v.mean for k, v in results['samples'].items()],
+                error_y=dict(
+                    type='data',
+                    array=[v.margin_of_error for k, v in results['samples'].items()],
+                    visible=True
+                )
+            )
         )
-        plt.xlabel('Group')
-        plt.ylabel('Proportion')
+        fig.update_layout(
+            xaxis_title='Group',
+            yaxis_title='Proportion'
+        )
     else:
-        sample_dfs = []
-        for k, v in results['samples'].items():
-            df_tmp = pd.DataFrame({'value': v.x, 'group': k})
-            sample_dfs.append(df_tmp)
-        df = pd.concat(sample_dfs)
-        ax = sns.kdeplot(
-            data=df,
-            x='value',
-            hue='group',
-            fill=True
+        df = pd.concat([pd.DataFrame({k: v.x for k, v in results['samples'].items()})])
+        df_melt = pd.melt(df, var_name='group')
+        fig = px.histogram(df_melt, x='value', color='group', barmode='overlay', marginal='box')
+        fig.update_layout(
+            xaxis_title='Value',
+            yaxis_title='Count'
         )
-        plt.xlabel('Value')
-        plt.ylabel('Density')
-    plt.title('Distribution by Group')
+    fig.update_layout(title='Distribution by Group')
     return fig 
 
 def plot_confidence_intervals(results, control):

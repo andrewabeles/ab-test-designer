@@ -151,6 +151,6 @@ with tab2:
         test_results = get_test_results(df, group_id, y, metric_type=metric_type, alpha=alpha, alternative=alternative)
         col1, col2 = st.columns(2)
         with col1:
-            st.pyplot(plot_distributions(test_results))
+            st.plotly_chart(plot_distributions(test_results))
         with col2:
             st.pyplot(plot_confidence_intervals(test_results, control_id))
