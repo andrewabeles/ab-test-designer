@@ -5,15 +5,22 @@ import plotly.express as px
 import math
 from utils import get_min_detectable_difs, TestResults
 
-st.title("A/B Test Designer")
+st.set_page_config(
+    page_title="A/B Test Assistant",
+    page_icon=':test_tube:',
+    layout='wide'
+)
+
+st.title("A/B Test Assistant")
 
 with st.expander("About", expanded=True):
     st.write("""
-        Use this app to help design and plan A/B tests. Start by entering the experiment details in the sidebar. 
-        Then use the chart to see the minimum difference between the test and control group means the experiment would be
-        able to detect with statistical significance after a given number of periods. Use this information to 
-        understand how long the A/B test would need to run in order to provide the information required to make a decision. 
-        Download the raw data for reference and sharing.   
+        This app assists in the design, planning, and analysis of A/B tests. 
+        The Estimate Runtime tab helps determine the amount of time needed to run a future experiment, while the Analyze Results
+        tab summarizes the outcome of a past or current one. 
+        Start by entering the experiment parameters in the sidebar. Hover over an input widget's question mark icon to learn more
+        about it. 
+        The outputted data and visualizations on both tabs can be downloaded for reference and sharing.   
     """)
 
 with st.sidebar:
@@ -122,7 +129,13 @@ with tab1:
         ]]
 
 with tab2:
-    uploaded_file = st.file_uploader("Upload Test Results", type='csv')
+    uploaded_file = st.file_uploader(
+        "Upload Test Results", 
+        type='csv',
+        help="""Upload a CSV file of your raw experiment results. Each row should represent an individual experiment subject 
+        (user, device, etc.) and contain their observed metric value (binary conversion indicator, revenue, etc.) and the group 
+        or variant to which they were assigned (test, control, etc.). File size is limited to 200MB."""
+    )
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file)
         col1, col2, col3 = st.columns(3)

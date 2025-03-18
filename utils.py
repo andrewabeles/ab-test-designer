@@ -137,7 +137,7 @@ class TestResults():
             y=difs.index,
             error_x=[i.margin_of_error for i in difs.values],
             labels={'x': f'difference vs. {self.control}', 'y': 'group'},
-            title='Difference Confidence Intervals'
+            title='Difference by Group'
         )    
         fig.add_vline(x=0, line_width=3, line_dash='dash', line_color='gray')
         return fig
