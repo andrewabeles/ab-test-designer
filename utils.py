@@ -115,7 +115,7 @@ class TestResults():
                 x=[k for k in self.samples.keys()],
                 y=[v.mean for k, v in self.samples.items()],
                 error_y=[v.margin_of_error for k, v in self.samples.items()],
-                labels={'x': 'Group', 'y': 'Proportion'}
+                labels={'x': 'group', 'y': 'proportion'}
             )
         else:
             df = pd.concat([pd.DataFrame({k: v.x for k, v in self.samples.items()})])
@@ -132,10 +132,23 @@ class TestResults():
 
     def plot_differences(self):
         difs = self.differences[self.control].dropna()
+        error_x_plus = []
+        error_x_minus = []
+        for d in difs.values:
+            if self.alternative == 'two-sided':
+                error_x_plus.append(d.margin_of_error)
+                error_x_minus.append(d.margin_of_error)
+            elif self.alternative == 'larger':
+                error_x_plus.append(0),
+                error_x_minus.append(d.margin_of_error)
+            else:
+                error_x_plus.append(d.margin_of_error)
+                error_x_minus.append(0)
         fig = px.scatter(
             x=[i.difference for i in difs.values],
             y=difs.index,
-            error_x=[i.margin_of_error for i in difs.values],
+            error_x=error_x_plus,
+            error_x_minus=error_x_minus,
             labels={'x': f'difference vs. {self.control}', 'y': 'group'},
             title='Difference by Group'
         )    
