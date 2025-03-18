@@ -24,13 +24,11 @@ with st.expander("About", expanded=True):
     """)
 
 with st.sidebar:
-
     metric_type = st.selectbox(
         "Metric Type", 
         ["proportion", "mean"],
         help="""Select 'proportion' if the test's success metric is a conversion rate, and 'mean' if it's an average (e.g. revenue per user)."""
     )
-
     alternative = st.selectbox(
         "Alternative Hypothesis", 
         ["two-sided", "larger", "smaller"],
@@ -38,25 +36,31 @@ with st.sidebar:
                 Select 'larger' if only testing for an increase.
                 Select 'smaller' if only testing for a decrease."""
     )
-
     alpha = st.selectbox(
         "Alpha", 
         [0.01, 0.05, 0.1, 0.2], 
         index=1,
         help="""False Positive Rate. The probability the test will be statistically significant merely by chance."""
     )
+    n_groups = st.number_input(
+        "Num. Groups",
+        min_value=2,
+        value=2,
+        help="""Number of groups, or variants, you will test, including the control."""
+    )
+    bonferroni = st.checkbox(
+        "Bonferroni Correction",
+        help="""Divides alpha by the number of hypotheses being tested to reduce the risk of false positives. 
+                Useful when comparing multiple groups to control (e.g. test1 vs. control, test2 vs. control)."""
+    )
+    if bonferroni:
+        alpha = alpha / (n_groups - 1) # one hypothesis per non-control group
 
 tab1, tab2 = st.tabs(["Estimate Runtime", "Analyze Results"])
 
 with tab1:
     col1, col2 = st.columns([0.25, 0.75])
     with col1:
-        n_groups = st.number_input(
-            "Num. Groups",
-            min_value=2,
-            value=2,
-            help="""Number of groups, or variants, you will test, including the control."""
-        )
         subjects_per_period = st.number_input(
             "Subjects per Period", 
             min_value=1, 
