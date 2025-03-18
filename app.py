@@ -17,50 +17,12 @@ with st.expander("About", expanded=True):
     """)
 
 with st.sidebar:
-    n_groups = st.number_input(
-        "Num. Groups",
-        min_value=2,
-        value=2,
-        help="""Number of groups, or variants, you will test, including the control."""
-    )
-
-    subjects_per_period = st.number_input(
-        "Subjects per Period", 
-        min_value=1, 
-        value=1000,
-        help="""Number of unique subjects (users, devices, etc.) you expect to enter the experiment each period (day, week, etc.)."""
-    )
-
-    max_periods = st.number_input(
-        "Max. Periods",
-        min_value=1,
-        value=14,
-        help="""Maximum number of periods (days, weeks, etc.) you are willing to run the experiment."""
-    )
 
     metric_type = st.selectbox(
         "Metric Type", 
         ["proportion", "mean"],
         help="""Select 'proportion' if the test's success metric is a conversion rate, and 'mean' if it's an average (e.g. revenue per user)."""
     )
-
-    control_mean = st.number_input(
-        "Metric Baseline", 
-        min_value=0.0, 
-        max_value=1.0 if metric_type == 'proportion' else None,
-        value=0.1 if metric_type == 'proportion' else 10.0,
-        help="""Expected value of the success metric for the control group."""
-    )
-
-    if metric_type == 'proportion':
-        control_std = np.sqrt(control_mean * (1-control_mean))
-    else:
-        control_std = st.number_input(
-            "Metric Standard Deviation", 
-            min_value=0.0, 
-            value=3.0,
-            help="""Expected standard deviation of the success metric for the control group."""
-        )
 
     alternative = st.selectbox(
         "Alternative Hypothesis", 
@@ -77,37 +39,71 @@ with st.sidebar:
         help="""False Positive Rate. The probability the test will be statistically significant merely by chance."""
     )
 
-    power = st.selectbox(
-        "Power", 
-        [0.8, 0.85, 0.9, 0.95],
-        help="""1 - False Negative Rate. The probability the test will detect a minimum effect size with statistical significance if it truly exists."""
-    )
-
 tab1, tab2 = st.tabs(["Estimate Runtime", "Analyze Results"])
 
 with tab1:
-    results = get_min_detectable_difs(
-        control_mean,
-        control_std=control_std,
-        n_groups=n_groups,
-        max_periods=max_periods,
-        subjects_per_period=subjects_per_period,
-        metric_type=metric_type,
-        alpha=alpha,
-        power=power,
-        alternative=alternative
-    )
-
-    fig = px.line(
-        results,
-        y='means_dif',
-        x='periods',
-        markers=True,
-        title='Minimum Detectable Difference by Test Duration',
-        labels={'means_dif': 'difference in means'}
-    )
-
-    st.plotly_chart(fig)
+    col1, col2 = st.columns([0.25, 0.75])
+    with col1:
+        n_groups = st.number_input(
+            "Num. Groups",
+            min_value=2,
+            value=2,
+            help="""Number of groups, or variants, you will test, including the control."""
+        )
+        subjects_per_period = st.number_input(
+            "Subjects per Period", 
+            min_value=1, 
+            value=1000,
+            help="""Number of unique subjects (users, devices, etc.) you expect to enter the experiment each period (day, week, etc.)."""
+        )
+        max_periods = st.number_input(
+            "Max. Periods",
+            min_value=1,
+            value=14,
+            help="""Maximum number of periods (days, weeks, etc.) you are willing to run the experiment."""
+        )
+        control_mean = st.number_input(
+            "Metric Baseline", 
+            min_value=0.0, 
+            max_value=1.0 if metric_type == 'proportion' else None,
+            value=0.1 if metric_type == 'proportion' else 10.0,
+            help="""Expected value of the success metric for the control group."""
+        )
+        if metric_type == 'proportion':
+            control_std = np.sqrt(control_mean * (1-control_mean))
+        else:
+            control_std = st.number_input(
+                "Metric Standard Deviation", 
+                min_value=0.0, 
+                value=3.0,
+                help="""Expected standard deviation of the success metric for the control group."""
+            )
+        power = st.selectbox(
+            "Power", 
+            [0.8, 0.85, 0.9, 0.95],
+            help="""1 - False Negative Rate. The probability the test will detect a minimum effect size with statistical significance if it truly exists."""
+        )
+    with col2:
+        results = get_min_detectable_difs(
+            control_mean,
+            control_std=control_std,
+            n_groups=n_groups,
+            max_periods=max_periods,
+            subjects_per_period=subjects_per_period,
+            metric_type=metric_type,
+            alpha=alpha,
+            power=power,
+            alternative=alternative
+        )
+        fig = px.line(
+            results,
+            y='means_dif',
+            x='periods',
+            markers=True,
+            title='Minimum Detectable Difference by Test Duration',
+            labels={'means_dif': 'difference in means'}
+        )
+        st.plotly_chart(fig)
 
     with st.expander("Raw Data", expanded=False):
         results[[
