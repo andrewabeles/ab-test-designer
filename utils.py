@@ -115,7 +115,7 @@ class TestResults():
                 x=[k for k in self.samples.keys()],
                 y=[v.mean for k, v in self.samples.items()],
                 error_y=[v.margin_of_error for k, v in self.samples.items()],
-                labels={'x': 'group', 'y': 'proportion'}
+                labels={'x': 'group', 'y': 'mean'}
             )
         else:
             df = pd.concat([pd.DataFrame({k: v.x for k, v in self.samples.items()})])

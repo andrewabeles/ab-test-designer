@@ -51,7 +51,7 @@ with st.sidebar:
     bonferroni = st.checkbox(
         "Bonferroni Correction",
         help="""Divides alpha by the number of hypotheses being tested to reduce the risk of false positives. 
-                Useful when comparing multiple groups to control (e.g. test1 vs. control, test2 vs. control)."""
+                Useful when testing multiple variants."""
     )
     if bonferroni:
         alpha = alpha / (n_groups - 1) # one hypothesis per non-control group
