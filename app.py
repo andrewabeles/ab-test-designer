@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import math
-from utils import get_min_detectable_difs, TestResults
+from utils import get_min_detectable_difs, plot_min_detectable_difs, TestResults
 
 st.set_page_config(
     page_title="A/B Test Assistant",
@@ -106,14 +106,7 @@ with tab1:
             power=power,
             alternative=alternative
         )
-        fig = px.line(
-            results,
-            y='means_dif',
-            x='periods',
-            markers=True,
-            title='Minimum Detectable Difference by Test Duration',
-            labels={'means_dif': 'difference in means'}
-        )
+        fig = plot_min_detectable_difs(results)
         st.plotly_chart(fig)
 
     with st.expander("Raw Data", expanded=False):
