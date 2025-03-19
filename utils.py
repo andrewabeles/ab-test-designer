@@ -149,7 +149,9 @@ class TestResults():
             y=difs.index,
             error_x=error_x_plus,
             error_x_minus=error_x_minus,
-            labels={'x': f'difference vs. {self.control}', 'y': 'group'},
+            color=[i.statsig for i in difs.values],
+            color_discrete_map={True: 'green', False: 'gray'},
+            labels={'x': f'difference vs. {self.control}', 'y': 'group', 'color': 'stat. sig.'},
             title='Difference by Group'
         )    
         fig.add_vline(x=0, line_width=3, line_dash='dash', line_color='gray')
@@ -177,8 +179,7 @@ class Sample:
         self.confidence_interval = (self.mean - self.margin_of_error, self.mean + self.margin_of_error)
 
     def test_difference(self, control_sample, alpha=0.05, alternative='two-sided'):
-        dif = SampleDifference(self, control_sample, alpha=alpha, alternative=alternative)
-        return dif
+        return SampleDifference(self, control_sample, alpha=alpha, alternative=alternative)
 
 class SampleDifference:
     def __init__(self, sample_test, sample_control, alpha=0.05, alternative='two-sided'):
@@ -203,6 +204,7 @@ class SampleDifference:
             self.statistic, self.p_value, self.dof = ttest_ind(sample_test.x, sample_control.x, alternative=self.alternative)
             self.standard_error = np.sqrt(sample_test.var/sample_test.n + sample_control.var/sample_control.n)
             self.critical_value = stats.t.ppf(auc, df=self.dof)
+        self.statsig = self.p_value < alpha
         self.margin_of_error = self.critical_value * self.standard_error
         if alternative == 'two-sided':
             self.confidence_interval = (self.difference - self.margin_of_error, self.difference + self.margin_of_error)
