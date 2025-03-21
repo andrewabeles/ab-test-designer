@@ -171,7 +171,6 @@ class Sample:
         self.alpha = alpha
         self.metric_type = metric_type
         self.n = len(x)
-        self.n_unique = x.nunique()
         self.mean = x.mean()
         self.sum = x.sum() 
         self.var = np.var(x, ddof=1)
