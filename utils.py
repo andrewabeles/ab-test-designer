@@ -76,7 +76,7 @@ def plot_min_detectable_difs(min_detectable_difs):
     )
     return fig
 
-class TestResults():
+class TestResults:
     def __init__(self, data=None, metric=None, group=None, control=None, metric_type='proportion', alpha=0.05, alternative='two-sided'):
         self.data = data 
         self.metric = metric 
@@ -120,18 +120,15 @@ class TestResults():
     def plot_samples(self):
         if self.metric_type == 'proportion':
             fig = px.bar(
-                x=[k for k in self.samples.keys()],
-                y=[v.mean for k, v in self.samples.items()],
-                error_y=[v.margin_of_error for k, v in self.samples.items()],
+                x=[k for k in self.samples.keys()], # sample names 
+                y=[v.mean for k, v in self.samples.items()], # sample proportions 
+                error_y=[v.margin_of_error for k, v in self.samples.items()], # sample proportions' margins of error 
                 labels={'x': 'group', 'y': 'mean'}
             )
         else:
-            df = pd.concat([pd.DataFrame({k: v.x for k, v in self.samples.items()})])
-            df_melt = pd.melt(df, var_name='group')
             fig = px.histogram(
-                df_melt, 
-                x=self.metric, 
-                color='group', 
+                x=self.data[self.metric],
+                color=self.data[self.group], 
                 barmode='overlay', 
                 marginal='box'
             )
