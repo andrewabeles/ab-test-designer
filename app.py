@@ -155,10 +155,14 @@ with tab2:
                 help="""Select the control or reference group against which the other groups will be measured."""
             )
         test_results = TestResults(data=df, metric=y, group=group_id, control=control_id, metric_type=metric_type, alpha=alpha, alternative=alternative)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.plotly_chart(test_results.plot_samples())
-        with col2:
-            st.plotly_chart(test_results.plot_differences())
-        test_results_summary = test_results.summarize()
-        test_results_summary
+        if test_results.validate_metric_type():
+            col1, col2 = st.columns(2)
+            with col1:
+                st.plotly_chart(test_results.plot_samples())
+            with col2:
+                st.plotly_chart(test_results.plot_differences())
+            test_results_summary = test_results.summarize()
+            test_results_summary
+        else:
+            st.warning(f"""The selected Success Metric '{y}' does not have the properties of the selected Metric Type '{metric_type}'.
+                        Please update the Metric Type or select a different Success Metric column.""")

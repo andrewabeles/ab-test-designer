@@ -98,6 +98,12 @@ class TestResults():
         self.samples = {s.name: s for s in samples}
         self.differences = differences     
 
+    def validate_metric_type(self):
+        for s in self.samples.values():
+            if not s.validate_metric_type():
+                return False
+        return True
+    
     def summarize(self):
         df = pd.DataFrame()
         for k, v in self.samples.items():
@@ -168,6 +174,7 @@ class Sample:
         self.alpha = alpha
         self.metric_type = metric_type
         self.n = len(x)
+        self.n_unique = x.nunique()
         self.mean = x.mean()
         self.sum = x.sum() 
         self.var = np.var(x, ddof=1)
@@ -179,7 +186,14 @@ class Sample:
             self.standard_error = x.std() / np.sqrt(self.n)
         self.margin_of_error = self.critical_value * self.standard_error
         self.confidence_interval = (self.mean - self.margin_of_error, self.mean + self.margin_of_error)
-
+    
+    def validate_metric_type(self):
+        is_proportion_like = set(self.x.unique()).issubset({0, 1})
+        if (self.metric_type == 'proportion' and not is_proportion_like) or (self.metric_type == 'mean' and is_proportion_like):
+            return False
+        else:
+            return True
+    
     def test_difference(self, control_sample, alpha=0.05, alternative='two-sided'):
         return SampleDifference(self, control_sample, alpha=alpha, alternative=alternative)
 
