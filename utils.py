@@ -11,6 +11,7 @@ from statsmodels.stats.proportion import proportion_effectsize, proportions_ztes
 from statsmodels.stats.power import zt_ind_solve_power, tt_ind_solve_power
 
 def get_min_detectable_difs(control_mean, control_std=None, n_groups=2, subjects_per_period=1000, max_periods=10, metric_type='proportion', alpha=0.05, power=0.8, alternative='two-sided'):
+    """Estimates the minimum detectable difference in sample means for a range of experiment durations."""
     results = {
         'test_mean': [],
         'means_dif': [],
@@ -66,6 +67,7 @@ def get_min_detectable_difs(control_mean, control_std=None, n_groups=2, subjects
     return df
 
 def plot_min_detectable_difs(min_detectable_difs):
+    """Plots the minimum detectable difference for a range of experiment durations."""
     fig = px.line(
         min_detectable_difs,
         y='means_dif',
@@ -77,6 +79,7 @@ def plot_min_detectable_difs(min_detectable_difs):
     return fig
 
 class TestResults:
+    """An experiment's samples and sample differences."""
     def __init__(self, data=None, metric=None, group=None, control=None, metric_type='proportion', alpha=0.05, alternative='two-sided'):
         self.data = data 
         self.metric = metric 
@@ -85,11 +88,13 @@ class TestResults:
         self.metric_type = metric_type 
         self.alpha = alpha
         self.alternative = alternative 
+        # get the experiment's samples
         samples = []
         for g in self.data[self.group].unique():
             x = self.data[self.data[self.group] == g][self.metric]
             sample = Sample(x, name=g, alpha=self.alpha, metric_type=self.metric_type)
             samples.append(sample)
+        # calculate the differences between each pair of samples 
         differences = pd.DataFrame()
         for i in samples:
             for j in samples:
@@ -99,18 +104,21 @@ class TestResults:
         self.differences = differences     
 
     def validate_metric_type(self):
+        """Checks whether all of the samples' metric types are valid."""
         for s in self.samples.values():
             if not s.validate_metric_type():
                 return False
         return True
     
     def summarize(self):
+        """Returns a dataframe summarizing the experiment's results."""
         df = pd.DataFrame()
+        # get each sample's difference relative to control 
         for k, v in self.samples.items():
             df.loc[k, 'sample_size'] = v.n 
             df.loc[k, 'mean'] = v.mean 
             if k != self.control: 
-                dif = self.differences[self.control][k]
+                dif = self.differences[self.control][k] 
                 df.loc[k, 'difference'] = dif.difference 
                 df.loc[k, 'lower_bound'] = dif.confidence_interval[0]
                 df.loc[k, 'upper_bound'] = dif.confidence_interval[1]
@@ -118,6 +126,8 @@ class TestResults:
         return df     
 
     def plot_samples(self):
+        """Visualizes each sample distribution."""
+        # bar plot for proportions 
         if self.metric_type == 'proportion':
             fig = px.bar(
                 x=[k for k in self.samples.keys()], # sample names 
@@ -125,6 +135,7 @@ class TestResults:
                 error_y=[v.margin_of_error for k, v in self.samples.items()], # sample proportions' margins of error 
                 labels={'x': 'group', 'y': 'mean'}
             )
+        # histogram and boxplot for means 
         else:
             fig = px.histogram(
                 x=self.data[self.metric],
@@ -136,6 +147,7 @@ class TestResults:
         return fig
 
     def plot_differences(self):
+        """Visualizes the differences between each sample and the control."""
         difs = self.differences[self.control].dropna()
         error_x_plus = []
         error_x_minus = []
@@ -154,8 +166,8 @@ class TestResults:
             y=difs.index,
             error_x=error_x_plus,
             error_x_minus=error_x_minus,
-            color=[i.statsig for i in difs.values],
-            color_discrete_map={True: 'green', False: 'gray'},
+            color=[i.statsig for i in difs.values], # color differences based on whether they're stat. sig. 
+            color_discrete_map={True: 'green', False: 'gray'}, # green if stat. sig. else gray 
             labels={'x': f'difference vs. {self.control}', 'y': 'group', 'color': 'stat. sig.'},
             title='Difference by Group'
         )    
@@ -163,6 +175,7 @@ class TestResults:
         return fig
 
 class Sample:
+    """A group or variant's sample data and summary statistics."""
     def __init__(self, x, name=None, alpha=0.05, metric_type='proportion'):
         if metric_type not in ['proportion', 'mean']:
             raise ValueError("Invalid metric type. Must be 'proportion' or 'mean'.")
@@ -174,6 +187,7 @@ class Sample:
         self.mean = x.mean()
         self.sum = x.sum() 
         self.var = np.var(x, ddof=1)
+        # calculate sample mean's standard error 
         if metric_type == 'proportion':
             self.critical_value = stats.norm.ppf(1 - alpha)
             self.standard_error = np.sqrt(self.mean * (1 - self.mean) / self.n)
@@ -184,6 +198,7 @@ class Sample:
         self.confidence_interval = (self.mean - self.margin_of_error, self.mean + self.margin_of_error)
     
     def validate_metric_type(self):
+        """Checks whether the sample data matches the metric type."""
         is_proportion_like = set(self.x.unique()).issubset({0, 1})
         if (self.metric_type == 'proportion' and not is_proportion_like) or (self.metric_type == 'mean' and is_proportion_like):
             return False
@@ -191,9 +206,11 @@ class Sample:
             return True
     
     def test_difference(self, control_sample, alpha=0.05, alternative='two-sided'):
+        """Tests the difference between this sample and a control one."""
         return SampleDifference(self, control_sample, alpha=alpha, alternative=alternative)
 
 class SampleDifference:
+    """Statistical test of the difference between two sample means."""
     def __init__(self, sample_test, sample_control, alpha=0.05, alternative='two-sided'):
         if alternative not in ['two-sided', 'larger', 'smaller']:
             raise ValueError("Invalid alternative hypothesis. Must be 'two-sided', 'larger', or 'smaller'.")
@@ -206,18 +223,21 @@ class SampleDifference:
         self.alpha = alpha
         self.alternative = alternative
         self.difference = sample_test.mean - sample_control.mean
-        auc = 1 - alpha/2 if alternative == 'two-sided' else 1 - alpha
+        auc = 1 - alpha/2 if alternative == 'two-sided' else 1 - alpha # area under the statistic's sampling distribution for calculating critical value
+        # run a Z-test for proportions 
         if self.metric_type == 'proportion':
             self.statistic, self.p_value = proportions_ztest([sample_test.sum, sample_control.sum], [sample_test.n, sample_control.n], alternative=self.alternative)
             p_pooled = (sample_test.sum + sample_control.sum) / (sample_test.n + sample_control.n)
             self.standard_error = np.sqrt(p_pooled * (1 - p_pooled) * (1/sample_test.n + 1/sample_control.n))
             self.critical_value = stats.norm.ppf(auc)
+        # run a T-test for means 
         else:
             self.statistic, self.p_value, self.dof = ttest_ind(sample_test.x, sample_control.x, alternative=self.alternative)
             self.standard_error = np.sqrt(sample_test.var/sample_test.n + sample_control.var/sample_control.n)
             self.critical_value = stats.t.ppf(auc, df=self.dof)
         self.statsig = self.p_value < alpha
         self.margin_of_error = self.critical_value * self.standard_error
+        # calculate confidence interval 
         if alternative == 'two-sided':
             self.confidence_interval = (self.difference - self.margin_of_error, self.difference + self.margin_of_error)
         elif alternative == 'larger':
