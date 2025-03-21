@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import math
-from utils import get_min_detectable_difs, plot_min_detectable_difs, TestResults
+from utils import RuntimeEstimator, TestResults
 
 st.set_page_config(
     page_title="A/B Test Assistant",
@@ -95,7 +95,7 @@ with tab1:
             help="""1 - False Negative Rate. The probability the test will detect a minimum effect size with statistical significance if it truly exists."""
         )
     with col2:
-        results = get_min_detectable_difs(
+        re = RuntimeEstimator(
             control_mean,
             control_std=control_std,
             n_groups=n_groups,
@@ -106,24 +106,11 @@ with tab1:
             power=power,
             alternative=alternative
         )
-        fig = plot_min_detectable_difs(results)
+        fig = re.plot_results()
         st.plotly_chart(fig)
 
     with st.expander("Raw Data", expanded=False):
-        results[[
-            'metric_type',
-            'alternative_hypothesis',
-            'alpha',
-            'power',
-            'control_mean',
-            'test_mean',
-            'means_dif',
-            'control_std',
-            'effect_size',
-            'total_sample_size',
-            'subjects_per_period',
-            'periods'
-        ]]
+        st.write(re.print_results())
 
 with tab2:
     uploaded_file = st.file_uploader(
