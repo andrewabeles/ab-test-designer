@@ -165,7 +165,8 @@ class TestResults:
                 x=self.data[self.metric],
                 color=self.data[self.group], 
                 barmode='overlay', 
-                marginal='box'
+                marginal='box',
+                labels={'x': f'{self.metric}', 'color': 'group'}
             )
         fig.update_layout(title='Distribution by Group')
         return fig
