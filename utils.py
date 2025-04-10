@@ -14,7 +14,7 @@ class RuntimeEstimator:
         self.control_mean = control_mean 
         self.control_std = control_std 
         self.n_groups = n_groups
-        self.subjects_per_period = 1000 
+        self.subjects_per_period = subjects_per_period 
         self.max_periods = max_periods 
         self.metric_type = metric_type 
         self.alpha = alpha 
