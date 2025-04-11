@@ -126,7 +126,7 @@ with tab2:
         with col1:
             y = st.selectbox(
                 "Success Metric", 
-                [c for c in df.select_dtypes(include='number').columns],
+                [c for c in df.select_dtypes(include=['number', 'bool']).columns],
                 help="""Select the column containing the success metric values."""
             )
         with col2:
