@@ -257,7 +257,7 @@ class SampleDifference:
             self.critical_value = stats.norm.ppf(auc)
         # run a T-test for means 
         else:
-            self.statistic, self.p_value, self.dof = ttest_ind(sample_test.x, sample_control.x, alternative=self.alternative)
+            self.statistic, self.p_value, self.dof = ttest_ind(sample_test.x, sample_control.x, alternative=self.alternative, usevar='unequal')
             self.standard_error = np.sqrt(sample_test.var/sample_test.n + sample_control.var/sample_control.n)
             self.critical_value = stats.t.ppf(auc, df=self.dof)
         self.statsig = self.p_value < alpha
